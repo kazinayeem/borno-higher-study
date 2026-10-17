@@ -38,15 +38,29 @@ import { AdminContentStudio } from '../components/admin/AdminContentStudio.js';
 import { AdminLinkHealthManager } from '../components/admin/AdminLinkHealthManager.js';
 import { AdminCareerToolkitManager } from '../components/admin/AdminCareerToolkitManager.js';
 import { AdminCountryWorkGuideManager } from '../components/admin/AdminCountryWorkGuideManager.js';
+import { AdminLayout } from '../components/admin/sidebar/index.js';
 import { GraduationCap, Sparkles, Link2, Briefcase } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
 import { PageIntro, StaggerGroup } from '../components/motion/index.js';
 
 export const AdminDashboardPage: React.FC = () => {
   const { user, token, isAdmin } = useAuth();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const defaultTab = (searchParams.get('tab') as any) || 'overview';
   const [activeTab, setActiveTab] = useState<'overview' | 'content' | 'link-health' | 'work-guide' | 'career-toolkit' | 'academic' | 'coverage' | 'visa' | 'english-tests' | 'moi' | 'reports' | 'deadlines' | 'contributors' | 'posts' | 'documents'>(defaultTab);
+
+  // Sync tab with URL search parameter
+  const tabFromQuery = searchParams.get('tab') as any;
+  useEffect(() => {
+    if (tabFromQuery && tabFromQuery !== activeTab) {
+      setActiveTab(tabFromQuery);
+    }
+  }, [tabFromQuery]);
+
+  const handleSelectTab = (tab: string) => {
+    setActiveTab(tab as any);
+    setSearchParams({ tab });
+  };
   const [stats, setStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
@@ -216,240 +230,38 @@ export const AdminDashboardPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 py-10 pb-24">
+    <AdminLayout
+      activeTab={activeTab}
+      onSelectTab={handleSelectTab}
+      badgeCounts={{
+        applications: applications.length,
+        pendingPosts: pendingPosts.length,
+        docQueue: docQueue.length,
+      }}
+    >
       <SeoHead
         title="Admin Control Center & Moderation | Borno Higher Study"
         description="Administrative management portal for contributor verification, post moderation, and confidential document queues."
         canonicalPath="/admin"
         noIndex={true}
       />
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
-        {/* Header */}
-        <PageIntro className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <div>
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-teal-50 dark:bg-teal-950/40 text-teal-800 dark:text-teal-300 text-xs font-semibold border border-teal-200 dark:border-teal-800/50">
-              <ShieldCheck className="w-4 h-4 text-teal-600 dark:text-teal-400" />
-              <span>Administrative Control Center • Role: {user?.role || 'SUPER_ADMIN'}</span>
-            </div>
-            <h1 className="text-2xl sm:text-3xl font-heading font-semibold text-brand-navy dark:text-white tracking-tight mt-1">
-              Data, Contributor & Document Review Portal
-            </h1>
-            <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
-              Multi-role administration: ingest official sources, approve student contributors, moderate guides, and complete internal financial document checks.
-            </p>
-          </div>
 
-          <div className="flex items-center gap-2">
-            <Link
-              to="/admin/verification"
-              className="px-4 py-2 rounded-xl bg-brand-navy dark:bg-teal-700 hover:bg-slate-800 dark:hover:bg-teal-600 text-white text-xs font-semibold shadow-2xs transition-colors inline-flex items-center gap-1.5"
-            >
-              <FileSpreadsheet className="w-4 h-4" />
-              <span>CSV & Ingestion Pipeline</span>
-            </Link>
-          </div>
-        </PageIntro>
-
-        {/* Global Action Message */}
-        {actionMessage && (
-          <div className="p-3.5 rounded-xl bg-teal-50 border border-teal-200 text-teal-800 text-xs font-semibold flex items-center justify-between">
-            <span>{actionMessage}</span>
-            <button
-              type="button"
-              onClick={() => setActionMessage(null)}
-              className="text-teal-600 hover:text-teal-900 text-xs"
-            >
-              Dismiss
-            </button>
-          </div>
-        )}
-
-        {/* Tabs Bar */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-1 border-b border-slate-200">
+      {/* Global Action Message */}
+      {actionMessage && (
+        <div className="p-3.5 rounded-xl bg-teal-50 dark:bg-teal-950/40 border border-teal-200 dark:border-teal-800 text-teal-800 dark:text-teal-300 text-xs font-semibold flex items-center justify-between">
+          <span>{actionMessage}</span>
           <button
             type="button"
-            onClick={() => setActiveTab('overview')}
-            className={`px-4 py-2.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all flex items-center gap-2 ${
-              activeTab === 'overview'
-                ? 'bg-slate-900 text-white shadow-xs'
-                : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
-            }`}
+            onClick={() => setActionMessage(null)}
+            className="text-teal-600 dark:text-teal-400 hover:text-teal-900 text-xs"
           >
-            <Database className="w-4 h-4" />
-            Overview & Stats
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab('content')}
-            className={`px-4 py-2.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all flex items-center gap-2 ${
-              activeTab === 'content'
-                ? 'bg-slate-900 text-white shadow-xs'
-                : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
-            }`}
-          >
-            <Sparkles className="w-4 h-4 text-teal-400" />
-            Editorial Content Studio (100+ Guides)
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab('link-health')}
-            className={`px-4 py-2.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all flex items-center gap-2 ${
-              activeTab === 'link-health'
-                ? 'bg-slate-900 text-white shadow-xs'
-                : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
-            }`}
-          >
-            <Link2 className="w-4 h-4 text-teal-400" />
-            Link Health &amp; Repairs
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab('career-toolkit')}
-            className={`px-4 py-2.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all flex items-center gap-2 ${
-              activeTab === 'career-toolkit'
-                ? 'bg-slate-900 text-white shadow-xs'
-                : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
-            }`}
-          >
-            <Briefcase className="w-4 h-4 text-teal-400" />
-            Career Toolkit &amp; CV Research (52 Records)
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab('work-guide')}
-            className={`px-4 py-2.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all flex items-center gap-2 ${
-              activeTab === 'work-guide'
-                ? 'bg-slate-900 text-white shadow-xs'
-                : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
-            }`}
-          >
-            <Briefcase className="w-4 h-4 text-emerald-400" />
-            Work, Wages &amp; Career Guide
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab('academic')}
-            className={`px-4 py-2.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all flex items-center gap-2 ${
-              activeTab === 'academic'
-                ? 'bg-slate-900 text-white shadow-xs'
-                : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
-            }`}
-          >
-            <GraduationCap className="w-4 h-4 text-teal-400" />
-            Academic Requirements & Eligibility
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab('coverage')}
-            className={`px-4 py-2.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all flex items-center gap-2 ${
-              activeTab === 'coverage'
-                ? 'bg-slate-900 text-white shadow-xs'
-                : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
-            }`}
-          >
-            <Globe className="w-4 h-4 text-emerald-500" />
-            Country Coverage & Registries
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab('visa')}
-            className={`px-4 py-2.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all flex items-center gap-2 ${
-              activeTab === 'visa'
-                ? 'bg-slate-900 text-white shadow-xs'
-                : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
-            }`}
-          >
-            <Compass className="w-4 h-4 text-teal-500" />
-            Visa Intelligence &amp; Centres
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab('english-tests')}
-            className={`px-4 py-2.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all flex items-center gap-2 ${
-              activeTab === 'english-tests'
-                ? 'bg-slate-900 text-white shadow-xs'
-                : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
-            }`}
-          >
-            <Award className="w-4 h-4 text-teal-600" />
-            English Tests & Acceptance (52+)
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab('moi')}
-            className={`px-4 py-2.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all flex items-center gap-2 ${
-              activeTab === 'moi'
-                ? 'bg-slate-900 text-white shadow-xs'
-                : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
-            }`}
-          >
-            <FileSpreadsheet className="w-4 h-4 text-purple-600" />
-            MOI & Language Waivers
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab('reports')}
-            className={`px-4 py-2.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all flex items-center gap-2 ${
-              activeTab === 'reports'
-                ? 'bg-slate-900 text-white shadow-xs'
-                : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
-            }`}
-          >
-            <Flag className="w-4 h-4 text-teal-600" />
-            Factual Reports Queue
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab('deadlines')}
-            className={`px-4 py-2.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all flex items-center gap-2 ${
-              activeTab === 'deadlines'
-                ? 'bg-slate-900 text-white shadow-xs'
-                : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
-            }`}
-          >
-            <Calendar className="w-4 h-4 text-amber-600" />
-            Intakes & Deadlines
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab('contributors')}
-            className={`px-4 py-2.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all flex items-center gap-2 ${
-              activeTab === 'contributors'
-                ? 'bg-slate-900 text-white shadow-xs'
-                : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
-            }`}
-          >
-            <Users className="w-4 h-4" />
-            Contributor Applications ({applications.length})
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab('posts')}
-            className={`px-4 py-2.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all flex items-center gap-2 ${
-              activeTab === 'posts'
-                ? 'bg-slate-900 text-white shadow-xs'
-                : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
-            }`}
-          >
-            <PenSquare className="w-4 h-4" />
-            Community Moderation Queue ({pendingPosts.length})
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab('documents')}
-            className={`px-4 py-2.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all flex items-center gap-2 ${
-              activeTab === 'documents'
-                ? 'bg-slate-900 text-white shadow-xs'
-                : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
-            }`}
-          >
-            <FileLock2 className="w-4 h-4" />
-            Financial Document Queue ({docQueue.length})
+            Dismiss
           </button>
         </div>
+      )}
 
-        {/* Tab 1: Overview & Ingestion */}
-        {activeTab === 'overview' && (
+      {/* Tab 1: Overview & Ingestion */}
+      {activeTab === 'overview' && (
           <div className="space-y-6">
             {stats && (
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -788,10 +600,9 @@ export const AdminDashboardPage: React.FC = () => {
         {/* Tab 14: Career Toolkit, 52 Research Records, CV Models & Guides */}
         {activeTab === 'career-toolkit' && <AdminCareerToolkitManager />}
 
-        {/* Tab 15: Global Country Work, Minimum Wage & Career Intelligence */}
-        {activeTab === 'work-guide' && <AdminCountryWorkGuideManager />}
-      </div>
-    </div>
+      {/* Tab 15: Global Country Work, Minimum Wage & Career Intelligence */}
+      {activeTab === 'work-guide' && <AdminCountryWorkGuideManager />}
+    </AdminLayout>
   );
 };
 export default AdminDashboardPage;

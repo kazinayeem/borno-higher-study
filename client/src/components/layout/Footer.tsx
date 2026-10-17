@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { Logo } from '../common/Logo.js';
 import { COUNTRIES_DATA } from '../../data/countriesData.js';
 import { ShieldCheck } from 'lucide-react';
@@ -7,6 +7,16 @@ import { useTranslation } from '../../context/LanguageContext.js';
 
 export const Footer: React.FC = () => {
   const { t, formatNumber } = useTranslation();
+  const location = useLocation();
+
+  const isAdminDashboard =
+    location.pathname.startsWith('/super-admin/dashboard') ||
+    location.pathname === '/admin' ||
+    location.pathname.startsWith('/admin/verification');
+
+  if (isAdminDashboard) {
+    return null;
+  }
 
   return (
     <footer className="bg-[#0B192C] dark:bg-[#070E1A] text-slate-300 dark:text-slate-400 pt-16 pb-12 border-t border-slate-800 dark:border-slate-800/60 transition-colors">

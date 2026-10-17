@@ -26,6 +26,7 @@
     "test:motion": "npx tsx scripts/verifyAnimationSystem.ts",
     "test:career-toolkit": "npx tsx scripts/verifyCareerToolkit.ts",
     "test:work-guide": "npx tsx scripts/verifyCountryWorkGuide.ts",
+    "test:sidebar": "npx tsx scripts/verifyAdminSidebar.ts",
     "test:responsive": "npx tsx scripts/verifyResponsiveLayout.ts"
   },
   "keywords": [

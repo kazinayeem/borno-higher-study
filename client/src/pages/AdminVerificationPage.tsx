@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { UNIVERSITIES_DATA } from '../data/universitiesData.js';
 import {
   FileSpreadsheet,
@@ -12,7 +12,7 @@ import {
   ExternalLink,
 } from 'lucide-react';
 import { SeoHead } from '../components/common/SeoHead.js';
-
+import { AdminLayout } from '../components/admin/sidebar/index.js';
 
 const SAMPLE_CSV = `name,country,city,tuition
 Aalto University,Finland,Espoo,15000
@@ -22,6 +22,7 @@ RWTH Aachen University,Germany,Aachen,350
 Lund University,Sweden,Lund,145000`;
 
 export const AdminVerificationPage: React.FC = () => {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<'csv' | 'records'>('csv');
   const [rawCsv, setRawCsv] = useState(SAMPLE_CSV);
   const [csvPreview, setCsvPreview] = useState<any[]>([]);
@@ -80,21 +81,20 @@ export const AdminVerificationPage: React.FC = () => {
   );
 
   return (
-    <div className="min-h-screen bg-slate-50 py-10">
+    <AdminLayout
+      activeTab="verification"
+      onSelectTab={(tab) => {
+        navigate(`/super-admin/dashboard?tab=${tab}`);
+      }}
+      badgeCounts={{}}
+    >
       <SeoHead
         title="Data Verification & Import Pipeline | Borno Higher Study"
         description="Administrative verification portal."
-        canonicalPath="/admin/verify"
+        canonicalPath="/admin/verification"
         noIndex={true}
       />
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
-        <Link
-          to="/admin"
-          className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-brand-navy"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          <span>Back to Admin Dashboard</span>
-        </Link>
+      <div className="space-y-6">
 
         {/* Header */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -310,6 +310,6 @@ export const AdminVerificationPage: React.FC = () => {
           </div>
         )}
       </div>
-    </div>
+    </AdminLayout>
   );
 };

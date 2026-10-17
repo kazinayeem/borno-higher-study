@@ -228,6 +228,89 @@ export class CountryWorkGuideController {
       return res.status(500).json({ success: false, message: 'Failed to review correction report' });
     }
   }
+  /**
+   * Dedicated Dataset 1: GET /api/country-work-guide/datasets/minimum-wages
+   */
+  async getDatasetsMinimumWages(req: Request, res: Response) {
+    try {
+      const { countryCode } = req.query;
+      const data = await countryWorkGuideService.getMinimumWagesDataset(countryCode as string);
+      return res.json({ success: true, dataset: 'minimum-wages', count: data.length, data });
+    } catch (error: any) {
+      console.error('[CountryWorkGuideController] Error fetching minimum wages dataset:', error);
+      return res.status(500).json({ success: false, message: 'Failed to fetch minimum wages dataset' });
+    }
+  }
+
+  /**
+   * Dedicated Dataset 2: GET /api/country-work-guide/datasets/student-work-hours
+   */
+  async getDatasetsStudentWorkHours(req: Request, res: Response) {
+    try {
+      const { countryCode } = req.query;
+      const data = await countryWorkGuideService.getStudentWorkHoursDataset(countryCode as string);
+      return res.json({ success: true, dataset: 'student-work-hours', count: data.length, data });
+    } catch (error: any) {
+      console.error('[CountryWorkGuideController] Error fetching student work hours dataset:', error);
+      return res.status(500).json({ success: false, message: 'Failed to fetch student work hours dataset' });
+    }
+  }
+
+  /**
+   * Dedicated Dataset 3: GET /api/country-work-guide/datasets/post-study-work
+   */
+  async getDatasetsPostStudyWork(req: Request, res: Response) {
+    try {
+      const { countryCode } = req.query;
+      const data = await countryWorkGuideService.getPostStudyWorkDataset(countryCode as string);
+      return res.json({ success: true, dataset: 'post-study-work', count: data.length, data });
+    } catch (error: any) {
+      console.error('[CountryWorkGuideController] Error fetching post-study work dataset:', error);
+      return res.status(500).json({ success: false, message: 'Failed to fetch post-study work dataset' });
+    }
+  }
+
+  /**
+   * Admin: PUT /api/admin/country-work-guide/minimum-wages/:countryCode
+   */
+  async adminUpdateMinimumWage(req: Request, res: Response) {
+    try {
+      const { countryCode } = req.params;
+      const updated = await countryWorkGuideService.adminUpdateMinimumWage(countryCode, req.body);
+      return res.json({ success: true, updated });
+    } catch (error: any) {
+      console.error('[CountryWorkGuideController] Error updating minimum wage:', error);
+      return res.status(500).json({ success: false, message: error.message || 'Failed to update minimum wage' });
+    }
+  }
+
+  /**
+   * Admin: PUT /api/admin/country-work-guide/student-work-hours/:countryCode
+   */
+  async adminUpdateStudentWorkPolicy(req: Request, res: Response) {
+    try {
+      const { countryCode } = req.params;
+      const updated = await countryWorkGuideService.adminUpdateStudentWorkPolicy(countryCode, req.body);
+      return res.json({ success: true, updated });
+    } catch (error: any) {
+      console.error('[CountryWorkGuideController] Error updating student work policy:', error);
+      return res.status(500).json({ success: false, message: error.message || 'Failed to update student work policy' });
+    }
+  }
+
+  /**
+   * Admin: PUT /api/admin/country-work-guide/post-study-work/:routeId
+   */
+  async adminUpdatePostStudyWorkRoute(req: Request, res: Response) {
+    try {
+      const { routeId } = req.params;
+      const updated = await countryWorkGuideService.adminUpdatePostStudyWorkRoute(routeId, req.body);
+      return res.json({ success: true, updated });
+    } catch (error: any) {
+      console.error('[CountryWorkGuideController] Error updating post-study work route:', error);
+      return res.status(500).json({ success: false, message: error.message || 'Failed to update post-study work route' });
+    }
+  }
 }
 
 export const countryWorkGuideController = new CountryWorkGuideController();

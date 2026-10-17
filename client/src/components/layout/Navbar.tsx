@@ -53,6 +53,15 @@ export const Navbar: React.FC = () => {
   const navRef = useRef<HTMLElement>(null);
   const totalSaved = savedUniversityIds.length + savedScholarshipIds.length;
 
+  const isAdminDashboard =
+    location.pathname.startsWith('/super-admin/dashboard') ||
+    location.pathname === '/admin' ||
+    location.pathname.startsWith('/admin/verification');
+
+  if (isAdminDashboard) {
+    return null;
+  }
+
   useEffect(() => {
     if (!navRef.current || isReducedMotion()) return;
     const ctx = gsap.context(() => {

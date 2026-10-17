@@ -133,7 +133,7 @@ async function runCountryWorkGuideVerification() {
     assert(usProfileRes.ok, '7. US Profile Endpoint', `HTTP ${usProfileRes.status}`);
     const usProfileJson = await usProfileRes.json();
     const usProfile = usProfileJson.profile;
-    assert(usProfile?.studentWorkPolicies?.[0]?.termTimeLimitHours === 20 && usProfile?.studentWorkPolicies?.[0]?.offCampusRules?.includes('Strictly prohibited'), '7.1 US 20h On-Campus Rule', 'Enforces F-1 20h/wk on-campus requirement');
+    assert(usProfile?.studentWorkPolicies?.[0]?.termTimeLimitHours === 20 && usProfile?.studentWorkPolicies?.[0]?.offCampusRules?.toLowerCase().includes('strictly prohibited'), '7.1 US 20h On-Campus Rule', 'Enforces F-1 20h/wk on-campus requirement');
 
     const caProfileRes = await fetch(`${API_BASE}/country-work-guide/profile/CA`);
     assert(caProfileRes.ok, '7.2 Canada Profile Endpoint', `HTTP ${caProfileRes.status}`);
@@ -262,6 +262,24 @@ async function runCountryWorkGuideVerification() {
     assert(enContent.includes('countryWorkGuide:'), '12.1 en.ts Has countryWorkGuide', 'English translation object exists');
     assert(bnContent.includes('countryWorkGuide:'), '12.2 bn.ts Has countryWorkGuide', 'Bengali translation object exists');
     assert(bnContent.includes('বৈধ কর্মঘণ্টা') || bnContent.includes('ন্যূনতম মজুরি'), '12.3 Bengali Authentic Unicode', 'Authentic Bengali Unicode terms present');
+
+    // ---------------------------------------------------------
+    // 13. Decoupled Independent Datasets Across All 42 Countries
+    // ---------------------------------------------------------
+    const dsWagesRes = await fetch(`${API_BASE}/country-work-guide/datasets/minimum-wages`);
+    assert(dsWagesRes.ok, '13.1 Dedicated Minimum Wages Dataset Endpoint', `HTTP ${dsWagesRes.status}`);
+    const dsWagesJson = await dsWagesRes.json();
+    assert(dsWagesJson.success && dsWagesJson.count === 42, '13.2 Dataset 1 (Minimum Wage): 42 Countries', `Loaded ${dsWagesJson.count}/42 country minimum wage records`);
+
+    const dsWorkHoursRes = await fetch(`${API_BASE}/country-work-guide/datasets/student-work-hours`);
+    assert(dsWorkHoursRes.ok, '13.3 Dedicated Student Work Hours Dataset Endpoint', `HTTP ${dsWorkHoursRes.status}`);
+    const dsWorkHoursJson = await dsWorkHoursRes.json();
+    assert(dsWorkHoursJson.success && dsWorkHoursJson.count === 42, '13.4 Dataset 2 (Student Work Hours): 42 Countries', `Loaded ${dsWorkHoursJson.count}/42 student work hour records`);
+
+    const dsPswRes = await fetch(`${API_BASE}/country-work-guide/datasets/post-study-work`);
+    assert(dsPswRes.ok, '13.5 Dedicated Post-Study Work Dataset Endpoint', `HTTP ${dsPswRes.status}`);
+    const dsPswJson = await dsPswRes.json();
+    assert(dsPswJson.success && dsPswJson.count >= 42, '13.6 Dataset 3 (Post-Study Work): 42+ Country Routes', `Loaded ${dsPswJson.count} post-study work routes`);
 
     // ---------------------------------------------------------
     // Summary

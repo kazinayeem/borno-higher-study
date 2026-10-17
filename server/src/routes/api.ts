@@ -772,6 +772,11 @@ router.get('/country-work-guide/profile/:codeOrSlug', (req, res) => countryWorkG
 router.post('/country-work-guide/planner', (req, res) => countryWorkGuideController.generatePersonalizedPlan(req, res));
 router.post('/country-work-guide/corrections', optionalAuth, (req, res) => countryWorkGuideController.submitCorrectionReport(req, res));
 
+// Dedicated Independent Datasets
+router.get('/country-work-guide/datasets/minimum-wages', (req, res) => countryWorkGuideController.getDatasetsMinimumWages(req, res));
+router.get('/country-work-guide/datasets/student-work-hours', (req, res) => countryWorkGuideController.getDatasetsStudentWorkHours(req, res));
+router.get('/country-work-guide/datasets/post-study-work', (req, res) => countryWorkGuideController.getDatasetsPostStudyWork(req, res));
+
 // Admin routes
 router.post(
   '/admin/country-work-guide/verify',
@@ -790,6 +795,24 @@ router.patch(
   authenticateToken,
   requireRole(['SUPER_ADMIN', 'ADMIN']),
   (req, res) => countryWorkGuideController.reviewCorrectionReport(req, res)
+);
+router.put(
+  '/admin/country-work-guide/minimum-wages/:countryCode',
+  authenticateToken,
+  requireRole(['SUPER_ADMIN', 'ADMIN']),
+  (req, res) => countryWorkGuideController.adminUpdateMinimumWage(req, res)
+);
+router.put(
+  '/admin/country-work-guide/student-work-hours/:countryCode',
+  authenticateToken,
+  requireRole(['SUPER_ADMIN', 'ADMIN']),
+  (req, res) => countryWorkGuideController.adminUpdateStudentWorkPolicy(req, res)
+);
+router.put(
+  '/admin/country-work-guide/post-study-work/:routeId',
+  authenticateToken,
+  requireRole(['SUPER_ADMIN', 'ADMIN']),
+  (req, res) => countryWorkGuideController.adminUpdatePostStudyWorkRoute(req, res)
 );
 
 export default router;

@@ -4,6 +4,9 @@
 
 import { PrismaClient } from '@prisma/client';
 import { COUNTRY_WORK_GUIDE_DATA, CountryWorkGuideItem } from '../data/countryWorkGuideData.js';
+import { MINIMUM_WAGE_DATASET } from '../data/minimumWageData.js';
+import { STUDENT_WORK_HOURS_DATASET } from '../data/studentWorkHoursData.js';
+import { POST_STUDY_WORK_DATASET } from '../data/postStudyWorkData.js';
 
 const prisma = new PrismaClient();
 
@@ -20,27 +23,394 @@ export interface StudentPlannerInput {
 
 export class CountryWorkGuideService {
   /**
-   * Idempotent Seeding of Country Work Guide dataset
+   * Dataset 1: Independent Seeding of Minimum Wage Policies (All 42 countries)
    */
-  async seedCountryWorkGuideData() {
-    console.log('[CountryWorkGuideService] Checking and seeding verified Country Work Guide data...');
-
-    for (const item of COUNTRY_WORK_GUIDE_DATA) {
-      // Find the country in the database
+  async seedMinimumWages(): Promise<{ seeded: number }> {
+    console.log('[CountryWorkGuideService] Seeding Dataset 1: Minimum Wage Policies (42 countries)...');
+    let seeded = 0;
+    for (const item of MINIMUM_WAGE_DATASET) {
       const country = await prisma.country.findFirst({
         where: {
           OR: [{ code: item.countryCode }, { slug: item.countryCode.toLowerCase() }],
         },
       });
-
-      if (!country) {
-        console.warn(`[CountryWorkGuideService] Country code ${item.countryCode} not found in database. Skipping.`);
-        continue;
-      }
-
+      if (!country) continue;
       const countryId = country.id;
 
-      // 1. Upsert Languages
+      const existingWagePolicy = await prisma.minimumWagePolicy.findFirst({
+        where: { countryId },
+      });
+
+      const wagePolicy = existingWagePolicy
+        ? await prisma.minimumWagePolicy.update({
+            where: { id: existingWagePolicy.id },
+            data: {
+              policyType: item.policyType,
+              hasStatutoryMinimum: item.hasStatutoryMinimum,
+              governingBody: item.governingBody,
+              legislationName: item.legislationName,
+              overview: item.overview,
+              collectiveBargainingNote: item.collectiveBargainingNote,
+              sourceUrl: item.sourceUrl,
+              verificationStatus: item.verificationStatus,
+            },
+          })
+        : await prisma.minimumWagePolicy.create({
+            data: {
+              countryId,
+              policyType: item.policyType,
+              hasStatutoryMinimum: item.hasStatutoryMinimum,
+              governingBody: item.governingBody,
+              legislationName: item.legislationName,
+              overview: item.overview,
+              collectiveBargainingNote: item.collectiveBargainingNote,
+              sourceUrl: item.sourceUrl,
+              verificationStatus: item.verificationStatus,
+            },
+          });
+
+      // Upsert jurisdictions if present
+      const jurisdictionMap: Record<string, string> = {};
+      if (item.jurisdictions) {
+        for (const jur of item.jurisdictions) {
+          const existingJur = await prisma.wageJurisdiction.findFirst({
+            where: { countryId, name: jur.name },
+          });
+          const createdJur = existingJur
+            ? await prisma.wageJurisdiction.update({
+                where: { id: existingJur.id },
+                data: {
+                  jurisdictionType: jur.jurisdictionType,
+                  description: jur.description,
+                },
+              })
+            : await prisma.wageJurisdiction.create({
+                data: {
+                  countryId,
+                  name: jur.name,
+                  jurisdictionType: jur.jurisdictionType,
+                  description: jur.description,
+                },
+              });
+          jurisdictionMap[jur.name] = createdJur.id;
+        }
+      }
+
+      // Upsert rates
+      for (const rate of item.rates) {
+        const jurisdictionId = rate.jurisdictionName ? jurisdictionMap[rate.jurisdictionName] || null : null;
+        const existingRate = await prisma.minimumWageRate.findFirst({
+          where: {
+            policyId: wagePolicy.id,
+            rateUnit: rate.rateUnit,
+            rateType: rate.rateType,
+            jurisdictionId: jurisdictionId,
+          },
+        });
+
+        if (existingRate) {
+          await prisma.minimumWageRate.update({
+            where: { id: existingRate.id },
+            data: {
+              amount: rate.amount,
+              currencyCode: rate.currencyCode,
+              currencySymbol: rate.currencySymbol,
+              effectiveDate: new Date(rate.effectiveDate),
+              endDate: rate.endDate ? new Date(rate.endDate) : null,
+              isCurrent: rate.isCurrent,
+              rateType: rate.rateType,
+              ageCategory: rate.ageCategory,
+              apprenticeException: rate.apprenticeException,
+              industryExceptions: rate.industryExceptions,
+              estimatedBdtHourly: rate.estimatedBdtHourly,
+              bdtExchangeRateUsed: rate.bdtExchangeRateUsed,
+              exchangeRateProvider: rate.exchangeRateProvider,
+              rateNotes: rate.rateNotes,
+              officialSourceUrl: rate.officialSourceUrl,
+              verificationStatus: rate.verificationStatus,
+            },
+          });
+        } else {
+          await prisma.minimumWageRate.create({
+            data: {
+              policyId: wagePolicy.id,
+              jurisdictionId,
+              rateUnit: rate.rateUnit,
+              amount: rate.amount,
+              currencyCode: rate.currencyCode,
+              currencySymbol: rate.currencySymbol,
+              effectiveDate: new Date(rate.effectiveDate),
+              endDate: rate.endDate ? new Date(rate.endDate) : null,
+              isCurrent: rate.isCurrent,
+              rateType: rate.rateType,
+              ageCategory: rate.ageCategory,
+              apprenticeException: rate.apprenticeException,
+              industryExceptions: rate.industryExceptions,
+              estimatedBdtHourly: rate.estimatedBdtHourly,
+              bdtExchangeRateUsed: rate.bdtExchangeRateUsed,
+              exchangeRateProvider: rate.exchangeRateProvider,
+              rateNotes: rate.rateNotes,
+              officialSourceUrl: rate.officialSourceUrl,
+              verificationStatus: rate.verificationStatus,
+            },
+          });
+        }
+      }
+      seeded++;
+    }
+    console.log(`[CountryWorkGuideService] Dataset 1: ${seeded} Minimum Wage policies synchronized.`);
+    return { seeded };
+  }
+
+  /**
+   * Dataset 2: Independent Seeding of Legal Student Work Hours & Regulations (All 42 countries)
+   */
+  async seedStudentWorkHours(): Promise<{ seeded: number }> {
+    console.log('[CountryWorkGuideService] Seeding Dataset 2: Legal Student Work Hours (42 countries)...');
+    let seeded = 0;
+    for (const item of STUDENT_WORK_HOURS_DATASET) {
+      const country = await prisma.country.findFirst({
+        where: {
+          OR: [{ code: item.countryCode }, { slug: item.countryCode.toLowerCase() }],
+        },
+      });
+      if (!country) continue;
+      const countryId = country.id;
+
+      const existingStudentWork = await prisma.studentWorkPolicy.findFirst({
+        where: { countryId },
+      });
+
+      const studentWork = existingStudentWork
+        ? await prisma.studentWorkPolicy.update({
+            where: { id: existingStudentWork.id },
+            data: {
+              eligibilityStatus: item.eligibilityStatus,
+              termTimeLimitHours: item.termTimeLimitHours,
+              termTimeUnit: item.termTimeUnit,
+              termTimeRuleText: item.termTimeRuleText,
+              holidayLimitHours: item.holidayLimitHours,
+              holidayTimeUnit: item.holidayTimeUnit,
+              holidayRuleText: item.holidayRuleText,
+              onCampusRules: item.onCampusRules,
+              offCampusRules: item.offCampusRules,
+              selfEmploymentAllowed: item.selfEmploymentAllowed,
+              selfEmploymentRules: item.selfEmploymentRules,
+              internshipRules: item.internshipRules,
+              assistantshipRules: item.assistantshipRules,
+              canWorkBeforeCourseStarts: item.canWorkBeforeCourseStarts,
+              postCompletionRules: item.postCompletionRules,
+              visaConditionPrecedenceNote: item.visaConditionPrecedenceNote,
+              sourceUrl: item.sourceUrl,
+              verificationStatus: item.verificationStatus,
+            },
+          })
+        : await prisma.studentWorkPolicy.create({
+            data: {
+              countryId,
+              eligibilityStatus: item.eligibilityStatus,
+              termTimeLimitHours: item.termTimeLimitHours,
+              termTimeUnit: item.termTimeUnit,
+              termTimeRuleText: item.termTimeRuleText,
+              holidayLimitHours: item.holidayLimitHours,
+              holidayTimeUnit: item.holidayTimeUnit,
+              holidayRuleText: item.holidayRuleText,
+              onCampusRules: item.onCampusRules,
+              offCampusRules: item.offCampusRules,
+              selfEmploymentAllowed: item.selfEmploymentAllowed,
+              selfEmploymentRules: item.selfEmploymentRules,
+              internshipRules: item.internshipRules,
+              assistantshipRules: item.assistantshipRules,
+              canWorkBeforeCourseStarts: item.canWorkBeforeCourseStarts,
+              postCompletionRules: item.postCompletionRules,
+              visaConditionPrecedenceNote: item.visaConditionPrecedenceNote,
+              sourceUrl: item.sourceUrl,
+              verificationStatus: item.verificationStatus,
+            },
+          });
+
+      // Upsert exceptions
+      if (item.exceptions) {
+        for (const exc of item.exceptions) {
+          const existingExc = await prisma.studentWorkException.findFirst({
+            where: { policyId: studentWork.id, category: exc.category },
+          });
+          if (existingExc) {
+            await prisma.studentWorkException.update({
+              where: { id: existingExc.id },
+              data: {
+                description: exc.description,
+                allowedHours: exc.allowedHours,
+                timeUnit: exc.timeUnit,
+              },
+            });
+          } else {
+            await prisma.studentWorkException.create({
+              data: {
+                policyId: studentWork.id,
+                category: exc.category,
+                description: exc.description,
+                allowedHours: exc.allowedHours,
+                timeUnit: exc.timeUnit,
+              },
+            });
+          }
+        }
+      }
+
+      // Upsert authorizations
+      if (item.authorizations) {
+        for (const auth of item.authorizations) {
+          const existingAuth = await prisma.studentWorkAuthorization.findFirst({
+            where: { policyId: studentWork.id, authorizationType: auth.authorizationType },
+          });
+          if (existingAuth) {
+            await prisma.studentWorkAuthorization.update({
+              where: { id: existingAuth.id },
+              data: {
+                authorityName: auth.authorityName,
+                procedureDescription: auth.procedureDescription,
+                processingTimeDays: auth.processingTimeDays,
+                officialFormUrl: auth.officialFormUrl,
+              },
+            });
+          } else {
+            await prisma.studentWorkAuthorization.create({
+              data: {
+                policyId: studentWork.id,
+                authorizationType: auth.authorizationType,
+                authorityName: auth.authorityName,
+                procedureDescription: auth.procedureDescription,
+                processingTimeDays: auth.processingTimeDays,
+                officialFormUrl: auth.officialFormUrl,
+              },
+            });
+          }
+        }
+      }
+      seeded++;
+    }
+    console.log(`[CountryWorkGuideService] Dataset 2: ${seeded} Student Work policies synchronized.`);
+    return { seeded };
+  }
+
+  /**
+   * Dataset 3: Independent Seeding of Post-Study Work Routes & Graduate Visas (All 42 countries)
+   */
+  async seedPostStudyWork(): Promise<{ seeded: number }> {
+    console.log('[CountryWorkGuideService] Seeding Dataset 3: Post-Study Work Routes (42 countries)...');
+    let seeded = 0;
+    for (const item of POST_STUDY_WORK_DATASET) {
+      const country = await prisma.country.findFirst({
+        where: {
+          OR: [{ code: item.countryCode }, { slug: item.countryCode.toLowerCase() }],
+        },
+      });
+      if (!country) continue;
+      const countryId = country.id;
+
+      const existingRoute = await prisma.postStudyWorkRoute.findFirst({
+        where: { countryId, routeName: item.routeName },
+      });
+
+      const durationNotes = item.workRightsScope || `Permit duration ranges from ${item.durationMonthsMin} to ${item.durationMonthsMax} months based on qualification.`;
+      const applicationDeadlineDescription = item.applicationDeadlineDaysAfterGraduation
+        ? `Application must be lodged within ${item.applicationDeadlineDaysAfterGraduation} days of formal course completion.`
+        : 'Must apply prior to expiration of student immigration status.';
+
+      const createdRoute = existingRoute
+        ? await prisma.postStudyWorkRoute.update({
+            where: { id: existingRoute.id },
+            data: {
+              routeCode: item.officialVisaSubclass,
+              durationMonthsMin: item.durationMonthsMin,
+              durationMonthsMax: item.durationMonthsMax,
+              durationNotes,
+              jobOfferRequired: item.jobOfferRequired,
+              leadsToPermanentResidence: item.leadsToPermanentResidence,
+              prPathwayDetails: item.prTransitionPathway,
+              isExtensionPossible: item.renewalAllowed,
+              applicationDeadlineDays: item.applicationDeadlineDaysAfterGraduation,
+              applicationDeadlineDescription,
+              applicationFeeAmount: item.officialApplicationFee,
+              applicationFeeCurrency: item.applicationFeeCurrency,
+              governmentApplicationUrl: item.sourceUrl,
+              verificationStatus: item.verificationStatus,
+            },
+          })
+        : await prisma.postStudyWorkRoute.create({
+            data: {
+              countryId,
+              routeName: item.routeName,
+              routeCode: item.officialVisaSubclass,
+              durationMonthsMin: item.durationMonthsMin,
+              durationMonthsMax: item.durationMonthsMax,
+              durationNotes,
+              jobOfferRequired: item.jobOfferRequired,
+              leadsToPermanentResidence: item.leadsToPermanentResidence,
+              prPathwayDetails: item.prTransitionPathway,
+              isExtensionPossible: item.renewalAllowed,
+              applicationDeadlineDays: item.applicationDeadlineDaysAfterGraduation,
+              applicationDeadlineDescription,
+              applicationFeeAmount: item.officialApplicationFee,
+              applicationFeeCurrency: item.applicationFeeCurrency,
+              governmentApplicationUrl: item.sourceUrl,
+              verificationStatus: item.verificationStatus,
+            },
+          });
+
+      if (item.eligibilityRules) {
+        for (const rule of item.eligibilityRules) {
+          const existingRule = await prisma.graduateEligibilityRule.findFirst({
+            where: { routeId: createdRoute.id, qualificationLevel: rule.qualificationLevel },
+          });
+          const institutionCriteria = 'Accredited Higher Education Institution';
+          const description = rule.notes || `Eligibility criteria for ${rule.qualificationLevel} level degree qualification.`;
+          const studyDurationRequirement = rule.studyDurationRequirement || 'Full-time study completion';
+
+          if (existingRule) {
+            await prisma.graduateEligibilityRule.update({
+              where: { id: existingRule.id },
+              data: {
+                institutionCriteria,
+                studyDurationRequirement,
+                description,
+              },
+            });
+          } else {
+            await prisma.graduateEligibilityRule.create({
+              data: {
+                routeId: createdRoute.id,
+                qualificationLevel: rule.qualificationLevel,
+                institutionCriteria,
+                studyDurationRequirement,
+                description,
+              },
+            });
+          }
+        }
+      }
+      seeded++;
+    }
+    console.log(`[CountryWorkGuideService] Dataset 3: ${seeded} Post-Study Work routes synchronized.`);
+    return { seeded };
+  }
+
+  /**
+   * Seeding Languages, Sectors, Roadmaps, and Sources
+   */
+  async seedLanguagesAndRoadmaps(): Promise<void> {
+    console.log('[CountryWorkGuideService] Synchronizing language profiles, career sectors, roadmaps, and official sources...');
+    for (const item of COUNTRY_WORK_GUIDE_DATA) {
+      const country = await prisma.country.findFirst({
+        where: {
+          OR: [{ code: item.countryCode }, { slug: item.countryCode.toLowerCase() }],
+        },
+      });
+      if (!country) continue;
+      const countryId = country.id;
+
+      // 1. Languages
       for (const lang of item.languages) {
         const existingLang = await prisma.countryLanguage.findFirst({
           where: { countryId, languageCode: lang.languageCode },
@@ -75,7 +445,6 @@ export class CountryWorkGuideService {
               },
             });
 
-        // Upsert Language Usages
         if (lang.usages && lang.usages.length > 0) {
           for (const usage of lang.usages) {
             const existingUsage = await prisma.languageUsage.findFirst({
@@ -99,275 +468,7 @@ export class CountryWorkGuideService {
         }
       }
 
-      // 2. Upsert Minimum Wage Policy
-      const existingWagePolicy = await prisma.minimumWagePolicy.findFirst({
-        where: { countryId },
-      });
-
-      const wagePolicy = existingWagePolicy
-        ? await prisma.minimumWagePolicy.update({
-            where: { id: existingWagePolicy.id },
-            data: {
-              policyType: item.minimumWagePolicy.policyType,
-              hasStatutoryMinimum: item.minimumWagePolicy.hasStatutoryMinimum,
-              governingBody: item.minimumWagePolicy.governingBody,
-              legislationName: item.minimumWagePolicy.legislationName,
-              overview: item.minimumWagePolicy.overview,
-              collectiveBargainingNote: item.minimumWagePolicy.collectiveBargainingNote,
-              sourceUrl: item.minimumWagePolicy.sourceUrl,
-              verificationStatus: item.minimumWagePolicy.verificationStatus,
-            },
-          })
-        : await prisma.minimumWagePolicy.create({
-            data: {
-              countryId,
-              policyType: item.minimumWagePolicy.policyType,
-              hasStatutoryMinimum: item.minimumWagePolicy.hasStatutoryMinimum,
-              governingBody: item.minimumWagePolicy.governingBody,
-              legislationName: item.minimumWagePolicy.legislationName,
-              overview: item.minimumWagePolicy.overview,
-              collectiveBargainingNote: item.minimumWagePolicy.collectiveBargainingNote,
-              sourceUrl: item.minimumWagePolicy.sourceUrl,
-              verificationStatus: item.minimumWagePolicy.verificationStatus,
-            },
-          });
-
-      // Upsert Jurisdictions if present
-      const jurisdictionMap: Record<string, string> = {};
-      if (item.minimumWagePolicy.jurisdictions) {
-        for (const jur of item.minimumWagePolicy.jurisdictions) {
-          const existingJur = await prisma.wageJurisdiction.findFirst({
-            where: { countryId, name: jur.name },
-          });
-          const createdJur = existingJur
-            ? await prisma.wageJurisdiction.update({
-                where: { id: existingJur.id },
-                data: {
-                  jurisdictionType: jur.jurisdictionType,
-                  description: jur.description,
-                },
-              })
-            : await prisma.wageJurisdiction.create({
-                data: {
-                  countryId,
-                  name: jur.name,
-                  jurisdictionType: jur.jurisdictionType,
-                  description: jur.description,
-                },
-              });
-          jurisdictionMap[jur.name] = createdJur.id;
-        }
-      }
-
-      // Upsert Wage Rates
-      for (const rate of item.minimumWagePolicy.rates) {
-        const jurisdictionId = rate.jurisdictionName ? jurisdictionMap[rate.jurisdictionName] || null : null;
-        const existingRate = await prisma.minimumWageRate.findFirst({
-          where: {
-            policyId: wagePolicy.id,
-            rateUnit: rate.rateUnit,
-            rateType: rate.rateType,
-            jurisdictionId: jurisdictionId,
-          },
-        });
-
-        if (!existingRate) {
-          await prisma.minimumWageRate.create({
-            data: {
-              policyId: wagePolicy.id,
-              jurisdictionId,
-              rateUnit: rate.rateUnit,
-              amount: rate.amount,
-              currencyCode: rate.currencyCode,
-              currencySymbol: rate.currencySymbol,
-              effectiveDate: new Date(rate.effectiveDate),
-              isCurrent: rate.isCurrent,
-              rateType: rate.rateType,
-              ageCategory: rate.ageCategory,
-              apprenticeException: rate.apprenticeException,
-              industryExceptions: rate.industryExceptions,
-              estimatedBdtHourly: rate.estimatedBdtHourly,
-              bdtExchangeRateUsed: rate.bdtExchangeRateUsed,
-              exchangeRateProvider: rate.exchangeRateProvider,
-              rateNotes: rate.rateNotes,
-              officialSourceUrl: rate.officialSourceUrl,
-              verificationStatus: rate.verificationStatus,
-            },
-          });
-        }
-      }
-
-      // 3. Upsert Student Work Policy
-      const existingStudentWork = await prisma.studentWorkPolicy.findFirst({
-        where: { countryId },
-      });
-
-      const studentWork = existingStudentWork
-        ? await prisma.studentWorkPolicy.update({
-            where: { id: existingStudentWork.id },
-            data: {
-              eligibilityStatus: item.studentWorkPolicy.eligibilityStatus,
-              termTimeLimitHours: item.studentWorkPolicy.termTimeLimitHours,
-              termTimeUnit: item.studentWorkPolicy.termTimeUnit,
-              termTimeRuleText: item.studentWorkPolicy.termTimeRuleText,
-              holidayLimitHours: item.studentWorkPolicy.holidayLimitHours,
-              holidayTimeUnit: item.studentWorkPolicy.holidayTimeUnit,
-              holidayRuleText: item.studentWorkPolicy.holidayRuleText,
-              onCampusRules: item.studentWorkPolicy.onCampusRules,
-              offCampusRules: item.studentWorkPolicy.offCampusRules,
-              selfEmploymentAllowed: item.studentWorkPolicy.selfEmploymentAllowed,
-              selfEmploymentRules: item.studentWorkPolicy.selfEmploymentRules,
-              internshipRules: item.studentWorkPolicy.internshipRules,
-              assistantshipRules: item.studentWorkPolicy.assistantshipRules,
-              canWorkBeforeCourseStarts: item.studentWorkPolicy.canWorkBeforeCourseStarts,
-              postCompletionRules: item.studentWorkPolicy.postCompletionRules,
-              visaConditionPrecedenceNote: item.studentWorkPolicy.visaConditionPrecedenceNote,
-              sourceUrl: item.studentWorkPolicy.sourceUrl,
-              verificationStatus: item.studentWorkPolicy.verificationStatus,
-            },
-          })
-        : await prisma.studentWorkPolicy.create({
-            data: {
-              countryId,
-              eligibilityStatus: item.studentWorkPolicy.eligibilityStatus,
-              termTimeLimitHours: item.studentWorkPolicy.termTimeLimitHours,
-              termTimeUnit: item.studentWorkPolicy.termTimeUnit,
-              termTimeRuleText: item.studentWorkPolicy.termTimeRuleText,
-              holidayLimitHours: item.studentWorkPolicy.holidayLimitHours,
-              holidayTimeUnit: item.studentWorkPolicy.holidayTimeUnit,
-              holidayRuleText: item.studentWorkPolicy.holidayRuleText,
-              onCampusRules: item.studentWorkPolicy.onCampusRules,
-              offCampusRules: item.studentWorkPolicy.offCampusRules,
-              selfEmploymentAllowed: item.studentWorkPolicy.selfEmploymentAllowed,
-              selfEmploymentRules: item.studentWorkPolicy.selfEmploymentRules,
-              internshipRules: item.studentWorkPolicy.internshipRules,
-              assistantshipRules: item.studentWorkPolicy.assistantshipRules,
-              canWorkBeforeCourseStarts: item.studentWorkPolicy.canWorkBeforeCourseStarts,
-              postCompletionRules: item.studentWorkPolicy.postCompletionRules,
-              visaConditionPrecedenceNote: item.studentWorkPolicy.visaConditionPrecedenceNote,
-              sourceUrl: item.studentWorkPolicy.sourceUrl,
-              verificationStatus: item.studentWorkPolicy.verificationStatus,
-            },
-          });
-
-      // Upsert student work exceptions
-      if (item.studentWorkPolicy.exceptions) {
-        for (const exc of item.studentWorkPolicy.exceptions) {
-          const existingExc = await prisma.studentWorkException.findFirst({
-            where: { policyId: studentWork.id, category: exc.category },
-          });
-          if (!existingExc) {
-            await prisma.studentWorkException.create({
-              data: {
-                policyId: studentWork.id,
-                category: exc.category,
-                description: exc.description,
-                allowedHours: exc.allowedHours,
-                timeUnit: exc.timeUnit,
-              },
-            });
-          }
-        }
-      }
-
-      // Upsert student work authorizations
-      if (item.studentWorkPolicy.authorizations) {
-        for (const auth of item.studentWorkPolicy.authorizations) {
-          const existingAuth = await prisma.studentWorkAuthorization.findFirst({
-            where: { policyId: studentWork.id, authorizationType: auth.authorizationType },
-          });
-          if (!existingAuth) {
-            await prisma.studentWorkAuthorization.create({
-              data: {
-                policyId: studentWork.id,
-                authorizationType: auth.authorizationType,
-                authorityName: auth.authorityName,
-                procedureDescription: auth.procedureDescription,
-                processingTimeDays: auth.processingTimeDays,
-                officialFormUrl: auth.officialFormUrl,
-              },
-            });
-          }
-        }
-      }
-
-      // 4. Upsert Post-Study Work Routes
-      for (const route of item.postStudyWorkRoutes) {
-        const existingRoute = await prisma.postStudyWorkRoute.findFirst({
-          where: { countryId, routeName: route.routeName },
-        });
-
-        const createdRoute = existingRoute
-          ? await prisma.postStudyWorkRoute.update({
-              where: { id: existingRoute.id },
-              data: {
-                routeCode: route.routeCode,
-                durationMonthsMin: route.durationMonthsMin,
-                durationMonthsMax: route.durationMonthsMax,
-                durationNotes: route.durationNotes,
-                jobOfferRequired: route.jobOfferRequired,
-                employerSponsorshipRequired: route.employerSponsorshipRequired,
-                occupationRestrictions: route.occupationRestrictions,
-                selfEmploymentAllowed: route.selfEmploymentAllowed,
-                isExtensionPossible: route.isExtensionPossible,
-                leadsToPermanentResidence: route.leadsToPermanentResidence,
-                prPathwayDetails: route.prPathwayDetails,
-                applicationDeadlineDays: route.applicationDeadlineDays,
-                applicationDeadlineDescription: route.applicationDeadlineDescription,
-                applicationFeeAmount: route.applicationFeeAmount,
-                applicationFeeCurrency: route.applicationFeeCurrency,
-                governmentApplicationUrl: route.governmentApplicationUrl,
-                verificationStatus: route.verificationStatus,
-                policyChangeNotice: route.policyChangeNotice,
-              },
-            })
-          : await prisma.postStudyWorkRoute.create({
-              data: {
-                countryId,
-                routeName: route.routeName,
-                routeCode: route.routeCode,
-                durationMonthsMin: route.durationMonthsMin,
-                durationMonthsMax: route.durationMonthsMax,
-                durationNotes: route.durationNotes,
-                jobOfferRequired: route.jobOfferRequired,
-                employerSponsorshipRequired: route.employerSponsorshipRequired,
-                occupationRestrictions: route.occupationRestrictions,
-                selfEmploymentAllowed: route.selfEmploymentAllowed,
-                isExtensionPossible: route.isExtensionPossible,
-                leadsToPermanentResidence: route.leadsToPermanentResidence,
-                prPathwayDetails: route.prPathwayDetails,
-                applicationDeadlineDays: route.applicationDeadlineDays,
-                applicationDeadlineDescription: route.applicationDeadlineDescription,
-                applicationFeeAmount: route.applicationFeeAmount,
-                applicationFeeCurrency: route.applicationFeeCurrency,
-                governmentApplicationUrl: route.governmentApplicationUrl,
-                verificationStatus: route.verificationStatus,
-                policyChangeNotice: route.policyChangeNotice,
-              },
-            });
-
-        // Upsert Eligibility Rules
-        for (const rule of route.eligibilityRules) {
-          const existingRule = await prisma.graduateEligibilityRule.findFirst({
-            where: { routeId: createdRoute.id, qualificationLevel: rule.qualificationLevel },
-          });
-          if (!existingRule) {
-            await prisma.graduateEligibilityRule.create({
-              data: {
-                routeId: createdRoute.id,
-                qualificationLevel: rule.qualificationLevel,
-                institutionCriteria: rule.institutionCriteria,
-                studyDurationRequirement: rule.studyDurationRequirement,
-                languageRequirement: rule.languageRequirement,
-                financialProofRequired: rule.financialProofRequired,
-                description: rule.description,
-              },
-            });
-          }
-        }
-      }
-
-      // 5. Upsert Career Sectors & Occupations
+      // 2. Career Sectors & Occupations
       for (const sector of item.careerSectors) {
         const existingSector = await prisma.careerSector.findFirst({
           where: { countryId, slug: sector.slug },
@@ -431,7 +532,7 @@ export class CountryWorkGuideService {
         }
       }
 
-      // 6. Upsert Career Roadmaps & Steps
+      // 3. Career Roadmaps & Steps
       for (const roadmap of item.careerRoadmaps) {
         const existingRoadmap = await prisma.careerRoadmap.findFirst({
           where: { countryId, title: roadmap.title },
@@ -489,7 +590,7 @@ export class CountryWorkGuideService {
         }
       }
 
-      // 7. Upsert Official Sources
+      // 4. Official Sources
       for (const src of item.officialSources) {
         const existingSrc = await prisma.countryOfficialSource.findFirst({
           where: { countryId, sourceUrl: src.sourceUrl },
@@ -524,8 +625,25 @@ export class CountryWorkGuideService {
         }
       }
     }
+  }
 
-    console.log('[CountryWorkGuideService] Country Work Guide dataset successfully seeded and synced.');
+  /**
+   * Orchestrates synchronization across all 3 independent datasets
+   */
+  async seedAllCountryWorkDatasets(): Promise<{ mwCount: number; swCount: number; pswCount: number }> {
+    console.log('[CountryWorkGuideService] Synchronizing 3 independent datasets for all 42 countries...');
+    const mw = await this.seedMinimumWages();
+    const sw = await this.seedStudentWorkHours();
+    const psw = await this.seedPostStudyWork();
+    await this.seedLanguagesAndRoadmaps();
+    return { mwCount: mw.seeded, swCount: sw.seeded, pswCount: psw.seeded };
+  }
+
+  /**
+   * Backward-compatible entrypoint
+   */
+  async seedCountryWorkGuideData() {
+    return this.seedAllCountryWorkDatasets();
   }
 
   /**
@@ -1045,12 +1163,182 @@ export class CountryWorkGuideService {
   }
 
   /**
-   * Helper: Ensure dataset is seeded if empty
+   * Dedicated Dataset 1 Query: Minimum Wages
+   */
+  async getMinimumWagesDataset(countryCode?: string) {
+    await this.ensureSeeded();
+    return prisma.minimumWagePolicy.findMany({
+      where: countryCode ? { country: { code: countryCode.toUpperCase() } } : {},
+      include: {
+        country: {
+          select: {
+            id: true,
+            name: true,
+            code: true,
+            slug: true,
+            flagEmoji: true,
+            currencyCode: true,
+            currencySymbol: true,
+            exchangeRateToBdt: true,
+            continent: true,
+          },
+        },
+        rates: {
+          include: { jurisdiction: true },
+          orderBy: { amount: 'desc' },
+        },
+      },
+      orderBy: { country: { name: 'asc' } },
+    });
+  }
+
+  /**
+   * Dedicated Dataset 2 Query: Legal Student Work Hours & Regulations
+   */
+  async getStudentWorkHoursDataset(countryCode?: string) {
+    await this.ensureSeeded();
+    return prisma.studentWorkPolicy.findMany({
+      where: countryCode ? { country: { code: countryCode.toUpperCase() } } : {},
+      include: {
+        country: {
+          select: {
+            id: true,
+            name: true,
+            code: true,
+            slug: true,
+            flagEmoji: true,
+            continent: true,
+          },
+        },
+        exceptions: true,
+        authorizations: true,
+      },
+      orderBy: { country: { name: 'asc' } },
+    });
+  }
+
+  /**
+   * Dedicated Dataset 3 Query: Post-Study Work Routes & Graduate Visas
+   */
+  async getPostStudyWorkDataset(countryCode?: string) {
+    await this.ensureSeeded();
+    return prisma.postStudyWorkRoute.findMany({
+      where: countryCode ? { country: { code: countryCode.toUpperCase() } } : {},
+      include: {
+        country: {
+          select: {
+            id: true,
+            name: true,
+            code: true,
+            slug: true,
+            flagEmoji: true,
+            continent: true,
+          },
+        },
+        eligibilityRules: true,
+      },
+      orderBy: { country: { name: 'asc' } },
+    });
+  }
+
+  /**
+   * Admin: Update Minimum Wage Policy independently
+   */
+  async adminUpdateMinimumWage(countryCodeOrId: string, data: any) {
+    const country = await prisma.country.findFirst({
+      where: { OR: [{ id: countryCodeOrId }, { code: countryCodeOrId.toUpperCase() }] },
+    });
+    if (!country) throw new Error('Country not found');
+
+    const policy = await prisma.minimumWagePolicy.findFirst({
+      where: { countryId: country.id },
+    });
+    if (!policy) throw new Error('Minimum wage policy not found for country');
+
+    return prisma.minimumWagePolicy.update({
+      where: { id: policy.id },
+      data: {
+        policyType: data.policyType ?? policy.policyType,
+        hasStatutoryMinimum: data.hasStatutoryMinimum ?? policy.hasStatutoryMinimum,
+        governingBody: data.governingBody ?? policy.governingBody,
+        legislationName: data.legislationName ?? policy.legislationName,
+        overview: data.overview ?? policy.overview,
+        collectiveBargainingNote: data.collectiveBargainingNote ?? policy.collectiveBargainingNote,
+        sourceUrl: data.sourceUrl ?? policy.sourceUrl,
+        verificationStatus: data.verificationStatus ?? policy.verificationStatus,
+        updatedAt: new Date(),
+      },
+      include: { country: true, rates: true },
+    });
+  }
+
+  /**
+   * Admin: Update Student Work Policy independently
+   */
+  async adminUpdateStudentWorkPolicy(countryCodeOrId: string, data: any) {
+    const country = await prisma.country.findFirst({
+      where: { OR: [{ id: countryCodeOrId }, { code: countryCodeOrId.toUpperCase() }] },
+    });
+    if (!country) throw new Error('Country not found');
+
+    const policy = await prisma.studentWorkPolicy.findFirst({
+      where: { countryId: country.id },
+    });
+    if (!policy) throw new Error('Student work policy not found for country');
+
+    return prisma.studentWorkPolicy.update({
+      where: { id: policy.id },
+      data: {
+        eligibilityStatus: data.eligibilityStatus ?? policy.eligibilityStatus,
+        termTimeLimitHours: data.termTimeLimitHours ?? policy.termTimeLimitHours,
+        termTimeUnit: data.termTimeUnit ?? policy.termTimeUnit,
+        termTimeRuleText: data.termTimeRuleText ?? policy.termTimeRuleText,
+        holidayLimitHours: data.holidayLimitHours ?? policy.holidayLimitHours,
+        holidayTimeUnit: data.holidayTimeUnit ?? policy.holidayTimeUnit,
+        holidayRuleText: data.holidayRuleText ?? policy.holidayRuleText,
+        onCampusRules: data.onCampusRules ?? policy.onCampusRules,
+        offCampusRules: data.offCampusRules ?? policy.offCampusRules,
+        selfEmploymentAllowed: data.selfEmploymentAllowed ?? policy.selfEmploymentAllowed,
+        selfEmploymentRules: data.selfEmploymentRules ?? policy.selfEmploymentRules,
+        sourceUrl: data.sourceUrl ?? policy.sourceUrl,
+        verificationStatus: data.verificationStatus ?? policy.verificationStatus,
+        updatedAt: new Date(),
+      },
+      include: { country: true, exceptions: true, authorizations: true },
+    });
+  }
+
+  /**
+   * Admin: Update Post-Study Work Route independently
+   */
+  async adminUpdatePostStudyWorkRoute(routeId: string, data: any) {
+    return prisma.postStudyWorkRoute.update({
+      where: { id: routeId },
+      data: {
+        routeName: data.routeName,
+        routeCode: data.routeCode,
+        durationMonthsMin: data.durationMonthsMin,
+        durationMonthsMax: data.durationMonthsMax,
+        jobOfferRequired: data.jobOfferRequired,
+        leadsToPermanentResidence: data.leadsToPermanentResidence,
+        prPathwayDetails: data.prPathwayDetails,
+        governmentApplicationUrl: data.governmentApplicationUrl,
+        verificationStatus: data.verificationStatus,
+        updatedAt: new Date(),
+      },
+      include: { country: true, eligibilityRules: true },
+    });
+  }
+
+  /**
+   * Helper: Ensure all 3 datasets are populated (42 countries each)
    */
   private async ensureSeeded() {
-    const count = await prisma.minimumWagePolicy.count();
-    if (count === 0) {
-      await this.seedCountryWorkGuideData();
+    const mwCount = await prisma.minimumWagePolicy.count();
+    const swCount = await prisma.studentWorkPolicy.count();
+    const pswCount = await prisma.postStudyWorkRoute.count();
+    if (mwCount < 40 || swCount < 40 || pswCount < 40) {
+      await this.seedAllCountryWorkDatasets();
     }
   }
 }
