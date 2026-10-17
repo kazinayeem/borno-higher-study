@@ -1,0 +1,49 @@
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: borno-postgres
+    restart: always
+    environment:
+      POSTGRES_USER: borno_user
+      POSTGRES_PASSWORD: borno_secure_password_2025
+      POSTGRES_DB: borno_study_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U borno_user -d borno_study_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  server:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: borno-server
+    restart: always
+    environment:
+      NODE_ENV: production
+      PORT: 5001
+      DATABASE_URL: postgresql://borno_user:borno_secure_password_2025@postgres:5432/borno_study_db?schema=public
+      JWT_SECRET: borno-production-super-secret-key-change-in-prod
+    ports:
+      - "5001:5001"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  client:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+    container_name: borno-client
+    restart: always
+    ports:
+      - "80:80"
+    depends_on:
+      - server
+
+volumes:
+  postgres_data:

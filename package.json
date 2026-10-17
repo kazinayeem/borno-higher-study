@@ -1,0 +1,25 @@
+{
+  "name": "borno-higher-study",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Borno Higher Study - Your Future. Your University. Your World.",
+  "scripts": {
+    "dev": "npm run dev:all",
+    "dev:client": "npm --prefix client run dev",
+    "dev:server": "npm --prefix server run dev",
+    "dev:all": "node scripts/dev.js",
+    "build:client": "npm --prefix client run build",
+    "build:server": "npm --prefix server run build",
+    "build": "npm run build:client && npm run build:server"
+  },
+  "keywords": [
+    "study-abroad",
+    "higher-education",
+    "university-discovery",
+    "scholarships",
+    "ielts",
+    "borno"
+  ],
+  "author": "Borno Higher Study Team",
+  "license": "MIT"
+}

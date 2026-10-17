@@ -1,0 +1,453 @@
+// Borno Higher Study - Comprehensive PostgreSQL Schema
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum Role {
+  SUPER_ADMIN
+  DATA_EDITOR
+  DATA_REVIEWER
+  STUDENT
+}
+
+enum UniversityType {
+  PUBLIC
+  PRIVATE
+  SEMI_GOVERNMENT
+  OTHER
+}
+
+enum DegreeLevel {
+  BACHELOR
+  MASTER
+  PHD
+  DIPLOMA
+}
+
+enum ScholarshipType {
+  GOVERNMENT
+  UNIVERSITY_MERIT
+  NEED_BASED
+  TUITION_WAIVER
+  RESEARCH_ASSISTANTSHIP
+  TEACHING_ASSISTANTSHIP
+  FULLY_FUNDED
+}
+
+enum VerificationStatus {
+  VERIFIED
+  PENDING_REVIEW
+  NEEDS_UPDATE
+  CONFLICT_DETECTED
+}
+
+enum TaskStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  COMPLETED
+  OVERDUE
+}
+
+model User {
+  id            String    @id @default(uuid())
+  email         String    @unique
+  passwordHash  String
+  name          String
+  role          Role      @default(STUDENT)
+  avatarUrl     String?
+  targetCountry String?
+  targetDegree  String?
+  targetSubject String?
+  budget        Float?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  savedUniversities SavedUniversity[]
+  savedScholarships SavedScholarship[]
+  applicationPlans  ApplicationPlan[]
+  agentConversations AgentConversation[]
+  auditLogs         AuditLog[]
+}
+
+model Country {
+  id                 String   @id @default(uuid())
+  name               String   @unique
+  slug               String   @unique
+  code               String   @unique // e.g. FI, DE, US, NL
+  flagEmoji          String
+  currencyCode       String
+  currencySymbol     String
+  exchangeRateToBdt  Float    // e.g. 1 EUR = ~128 BDT
+  overview           String   @db.Text
+  capitalCity        String
+  majorCities        String[] // Array of major student cities
+  avgLivingCostMonthly Float  // in local currency
+  avgTuitionMin      Float
+  avgTuitionMax      Float
+  postStudyWorkVisa  String   @db.Text
+  visaGuideUrl       String
+  officialPortalUrl  String
+  lastVerifiedAt     DateTime @default(now())
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  cities             City[]
+  universities       University[]
+  scholarships       Scholarship[]
+}
+
+model City {
+  id                 String   @id @default(uuid())
+  name               String
+  countryId          String
+  country            Country  @relation(fields: [countryId], references: [id], onDelete: Cascade)
+  isCapital          Boolean  @default(false)
+  costOfLivingIndex  Float?
+  monthlyLivingCost  Float?   // in local currency
+
+  universities       University[]
+  campuses           Campus[]
+
+  @@unique([name, countryId])
+}
+
+model University {
+  id                 String             @id @default(uuid())
+  name               String
+  slug               String             @unique
+  logoUrl            String?
+  coverImageUrl      String?
+  countryId          String
+  country            Country            @relation(fields: [countryId], references: [id])
+  cityId             String
+  city               City               @relation(fields: [cityId], references: [id])
+  address            String?
+  websiteUrl         String
+  admissionsUrl      String
+  type               UniversityType     @default(PUBLIC)
+  levelsOffered      DegreeLevel[]
+  verificationStatus VerificationStatus @default(VERIFIED)
+  lastVerifiedAt     DateTime           @default(now())
+  qsRanking          Int?
+  timesRanking       Int?
+  acceptanceRate     Float?
+  internationalOfficeEmail String?
+  internationalOfficePhone String?
+  sourceUrl          String
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+
+  campuses           Campus[]
+  faculties          Faculty[]
+  programs           Program[]
+  tuitionFees        TuitionFee[]
+  scholarships       Scholarship[]
+  englishReqs        EnglishRequirement[]
+  admissionCycles    AdmissionCycle[]
+  savedByUsers       SavedUniversity[]
+  officialSources    OfficialSource[]
+  verificationHistory VerificationHistory[]
+}
+
+model Campus {
+  id           String     @id @default(uuid())
+  name         String
+  universityId String
+  university   University @relation(fields: [universityId], references: [id], onDelete: Cascade)
+  cityId       String?
+  city         City?      @relation(fields: [cityId], references: [id])
+  address      String?
+  isMainCampus Boolean    @default(false)
+}
+
+model Faculty {
+  id           String     @id @default(uuid())
+  name         String
+  universityId String
+  university   University @relation(fields: [universityId], references: [id], onDelete: Cascade)
+
+  programs     Program[]
+}
+
+model Subject {
+  id          String    @id @default(uuid())
+  name        String    @unique
+  slug        String    @unique
+  category    String    // e.g. "Computing and Technology", "Engineering", "Business"
+  description String?   @db.Text
+
+  programs    Program[]
+}
+
+model Program {
+  id                 String             @id @default(uuid())
+  name               String
+  slug               String
+  universityId       String
+  university         University         @relation(fields: [universityId], references: [id], onDelete: Cascade)
+  facultyId          String?
+  faculty            Faculty?           @relation(fields: [facultyId], references: [id])
+  subjectId          String
+  subject            Subject            @relation(fields: [subjectId], references: [id])
+  degreeLevel        DegreeLevel
+  durationMonths     Int                // e.g. 24 for 2-year Master's
+  creditsEcts        Int?               // e.g. 120 ECTS
+  languageOfInstruction String          @default("English")
+  annualTuitionLocal Float
+  currencyCode       String
+  applicationFeeLocal Float             @default(0)
+  programUrl         String
+  curriculumUrl      String?
+  prerequisites      String?            @db.Text
+  verificationStatus VerificationStatus @default(VERIFIED)
+  lastVerifiedAt     DateTime           @default(now())
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+
+  requirements       ProgramRequirement?
+  englishReq         EnglishRequirement?
+  tuitionFees        TuitionFee[]
+  scholarships       Scholarship[]
+  admissionCycles    AdmissionCycle[]
+}
+
+model ProgramRequirement {
+  id                     String   @id @default(uuid())
+  programId              String   @unique
+  program                Program  @relation(fields: [programId], references: [id], onDelete: Cascade)
+  minGpaScale4           Float?
+  minGpaScale5           Float?
+  greRequired            Boolean  @default(false)
+  minGreTotal            Int?
+  gmatRequired           Boolean  @default(false)
+  minGmatScore           Int?
+  workExperienceMonths   Int      @default(0)
+  requiredDocuments      String[] // ["Passport", "Academic Transcripts", "Motivation Letter", "2 Recommendation Letters"]
+  portfolioRequired      Boolean  @default(false)
+  interviewRequired      Boolean  @default(false)
+  updatedAt              DateTime @updatedAt
+}
+
+model EnglishRequirement {
+  id                     String      @id @default(uuid())
+  universityId           String?
+  university             University? @relation(fields: [universityId], references: [id], onDelete: Cascade)
+  programId              String?     @unique
+  program                Program?    @relation(fields: [programId], references: [id], onDelete: Cascade)
+  ieltsOverall           Float
+  ieltsReading           Float?
+  ieltsListening         Float?
+  ieltsSpeaking          Float?
+  ieltsWriting           Float?
+  toeflIbtOverall        Int?
+  toeflReading           Int?
+  toeflListening         Int?
+  toeflSpeaking          Int?
+  toeflWriting           Int?
+  pteOverall             Int?
+  pteReading             Int?
+  pteListening           Int?
+  pteSpeaking            Int?
+  pteWriting             Int?
+  duolingoScore          Int?
+  moeAccepted            Boolean     @default(false) // Medium of instruction exemption accepted?
+  moeDetails             String?     @db.Text
+  testValidityYears      Int         @default(2)
+  notes                  String?     @db.Text
+  sourceUrl              String
+  lastVerifiedAt         DateTime    @default(now())
+}
+
+model TuitionFee {
+  id                 String      @id @default(uuid())
+  universityId       String?
+  university         University? @relation(fields: [universityId], references: [id], onDelete: Cascade)
+  programId          String?
+  program            Program?    @relation(fields: [programId], references: [id], onDelete: Cascade)
+  academicYear       String      // e.g. "2025/2026"
+  annualTuitionLocal Float
+  currencyCode       String
+  isEuOnlyRate       Boolean     @default(false)
+  internationalRate  Float
+  paymentInstallments Int        @default(2)
+  lastVerifiedAt     DateTime    @default(now())
+}
+
+model Scholarship {
+  id                     String          @id @default(uuid())
+  name                   String
+  provider               String
+  type                   ScholarshipType @default(GOVERNMENT)
+  countryId              String?
+  country                Country?        @relation(fields: [countryId], references: [id])
+  universityId           String?
+  university             University?     @relation(fields: [universityId], references: [id])
+  programId              String?
+  program                Program?        @relation(fields: [programId], references: [id])
+  degreeLevels           DegreeLevel[]
+  coveragePercent        Float           @default(100) // 100 for full tuition
+  stipendMonthlyLocal    Float           @default(0)
+  travelAllowanceLocal   Float           @default(0)
+  currencyCode           String
+  isFullyFunded          Boolean         @default(false)
+  openToBangladesh       Boolean         @default(true)
+  eligibleNationalities  String[]
+  academicRequirements  String          @db.Text
+  languageRequirements  String?         @db.Text
+  deadlineDate           DateTime?
+  deadlineText           String?
+  officialApplicationUrl String
+  sourceUrl              String
+  verificationStatus     VerificationStatus @default(VERIFIED)
+  lastVerifiedAt         DateTime        @default(now())
+  createdAt              DateTime        @default(now())
+  updatedAt              DateTime        @updatedAt
+
+  eligibilityRules       ScholarshipEligibility[]
+  savedByUsers           SavedScholarship[]
+}
+
+model ScholarshipEligibility {
+  id            String      @id @default(uuid())
+  scholarshipId String
+  scholarship   Scholarship @relation(fields: [scholarshipId], references: [id], onDelete: Cascade)
+  criterionKey  String      // e.g. "min_gpa", "citizenship", "age_limit"
+  criterionValue String
+  isMandatory   Boolean     @default(true)
+}
+
+model AdmissionCycle {
+  id           String      @id @default(uuid())
+  universityId String?
+  university   University? @relation(fields: [universityId], references: [id], onDelete: Cascade)
+  programId    String?
+  program      Program?    @relation(fields: [programId], references: [id], onDelete: Cascade)
+  cycleName    String      // e.g. "Autumn 2025 Intake", "Spring 2026 Intake"
+  opensAt      DateTime
+  deadlineAt   DateTime
+  decisionAt   DateTime?
+  semesterStart DateTime?
+  isActive     Boolean     @default(true)
+  notes        String?
+}
+
+model OfficialSource {
+  id           String     @id @default(uuid())
+  universityId String
+  university   University @relation(fields: [universityId], references: [id], onDelete: Cascade)
+  title        String
+  url          String
+  domain       String
+  lastCheckedAt DateTime  @default(now())
+  httpStatus   Int?       @default(200)
+}
+
+model VerificationHistory {
+  id           String             @id @default(uuid())
+  universityId String
+  university   University         @relation(fields: [universityId], references: [id], onDelete: Cascade)
+  verifiedBy   String             // User ID or "SYSTEM_IMPORT"
+  status       VerificationStatus
+  notes        String?            @db.Text
+  verifiedAt   DateTime           @default(now())
+}
+
+model SavedUniversity {
+  id           String     @id @default(uuid())
+  userId       String
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  universityId String
+  university   University @relation(fields: [universityId], references: [id], onDelete: Cascade)
+  createdAt    DateTime   @default(now())
+
+  @@unique([userId, universityId])
+}
+
+model SavedScholarship {
+  id            String      @id @default(uuid())
+  userId        String
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  scholarshipId String
+  scholarship   Scholarship @relation(fields: [scholarshipId], references: [id], onDelete: Cascade)
+  createdAt     DateTime    @default(now())
+
+  @@unique([userId, scholarshipId])
+}
+
+model ApplicationPlan {
+  id              String            @id @default(uuid())
+  userId          String
+  user            User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  targetCountry   String
+  targetDegree    String
+  intake          String            // e.g. "Autumn 2025"
+  estimatedBudget Float?
+  notes           String?           @db.Text
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  tasks           ApplicationTask[]
+}
+
+model ApplicationTask {
+  id          String          @id @default(uuid())
+  planId      String
+  plan        ApplicationPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+  title       String
+  description String?
+  category    String          // "Documents", "Testing", "Application", "Visa", "Finance"
+  dueDate     DateTime?
+  status      TaskStatus      @default(NOT_STARTED)
+  order       Int             @default(0)
+}
+
+model AgentConversation {
+  id        String         @id @default(uuid())
+  userId    String?
+  user      User?          @relation(fields: [userId], references: [id], onDelete: SetNull)
+  title     String         @default("Study Abroad Consultation")
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+
+  messages  AgentMessage[]
+}
+
+model AgentMessage {
+  id             String            @id @default(uuid())
+  conversationId String
+  conversation   AgentConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender         String            // "user" or "agent"
+  content        String            @db.Text
+  citations      Json?             // Array of { title, url, verifiedDate, entityType }
+  structuredData Json?             // Array of universities/courses extracted
+  createdAt      DateTime          @default(now())
+}
+
+model ImportJob {
+  id             String             @id @default(uuid())
+  sourceName     String
+  sourceType     String             // "CSV", "API", "JSON_SYNC"
+  totalRecords   Int                @default(0)
+  validRecords   Int                @default(0)
+  invalidRecords Int                @default(0)
+  status         String             // "COMPLETED", "FAILED", "IN_PROGRESS"
+  errorLog       String?            @db.Text
+  createdAt      DateTime           @default(now())
+  completedAt    DateTime?
+}
+
+model AuditLog {
+  id         String   @id @default(uuid())
+  userId     String?
+  user       User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  action     String   // e.g. "UPDATE_UNIVERSITY", "VERIFY_COURSE", "IMPORT_DATA"
+  entityType String   // "University", "Program", "Scholarship", "Country"
+  entityId   String
+  details    Json?
+  timestamp  DateTime @default(now())
+}
