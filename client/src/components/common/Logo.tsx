@@ -9,9 +9,9 @@ interface LogoProps {
 
 export const Logo: React.FC<LogoProps> = ({ variant = 'auto', compact = false, className = '' }) => {
   return (
-    <Link to="/" className={`inline-flex items-center gap-3 group transition-transform ${className}`}>
+    <Link to="/" className={`inline-flex items-center gap-2.5 sm:gap-3 shrink-0 group transition-transform ${className}`}>
       {/* Dynamic SVG Icon */}
-      <div className="relative w-10 h-10 flex-shrink-0 drop-shadow-sm group-hover:scale-105 transition-transform">
+      <div className="relative w-9 h-9 sm:w-10 sm:h-10 flex-shrink-0 drop-shadow-sm group-hover:scale-105 transition-transform">
         <svg viewBox="0 0 100 100" fill="none" className="w-full h-full">
           <defs>
             <linearGradient id="logoGlobeGrad" x1="10" y1="10" x2="90" y2="90" gradientUnits="userSpaceOnUse">
@@ -51,21 +51,21 @@ export const Logo: React.FC<LogoProps> = ({ variant = 'auto', compact = false, c
 
       {/* Brand Wordmark */}
       {!compact && (
-        <div className="flex flex-col">
-          <div className="flex items-center gap-1.5">
+        <div className="flex flex-col justify-center">
+          <div className="flex items-center gap-1.5 whitespace-nowrap">
             <span
-              className={`font-heading font-extrabold text-xl tracking-tight ${
+              className={`font-heading font-extrabold text-lg sm:text-xl tracking-tight leading-none ${
                 variant === 'dark' ? 'text-white' : 'text-brand-navy'
               }`}
             >
               BORNO
             </span>
-            <span className="font-heading font-bold text-xl text-teal-600">
+            <span className="font-heading font-bold text-lg sm:text-xl text-teal-600 leading-none">
               HIGHER STUDY
             </span>
           </div>
           <span
-            className={`text-[10px] uppercase font-semibold tracking-widest ${
+            className={`text-[9.5px] uppercase font-semibold tracking-wider whitespace-nowrap mt-0.5 hidden sm:block ${
               variant === 'dark' ? 'text-slate-400' : 'text-slate-500'
             }`}
           >
