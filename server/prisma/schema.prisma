@@ -55,6 +55,7 @@ model User {
   policyCorrectionReports PolicyCorrectionReport[]
   dataImportJobs        DataImportJob[]
   policyVerifications   PolicyVerification[]
+  savedRequirementReports SavedRequirementsReport[]
 }
 
 model Country {
@@ -2362,6 +2363,25 @@ model DataImportJob {
 
   @@index([userId])
 }
+
+model SavedRequirementsReport {
+  id                  String   @id @default(uuid())
+  userId              String
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title               String
+  destinationCountry  String
+  degreeLevel         String
+  subjectField        String
+  intake              String
+  selectedProgramIds  String   // JSON string array of program IDs
+  studentProfileJson  String?  // JSON string of optional student profile
+  reportDataJson      String   // Cached JSON of compiled report
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@index([userId])
+}
+
 
 
 

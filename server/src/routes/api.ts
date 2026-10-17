@@ -815,6 +815,27 @@ router.put(
   (req, res) => countryWorkGuideController.adminUpdatePostStudyWorkRoute(req, res)
 );
 
+import {
+  getRequirementsFilterOptions,
+  searchRequirementsPrograms,
+  compileRequirementsReport,
+  saveRequirementsReport,
+  getUserSavedRequirementsReports,
+  getSavedRequirementsReportById,
+  deleteUserSavedRequirementsReport,
+  regenerateRequirementsReport,
+} from '../controllers/universityRequirementsReportController.js';
+
+// University Requirements Report Routes
+router.get('/university-requirements-report/filters', getRequirementsFilterOptions);
+router.get('/university-requirements-report/search', searchRequirementsPrograms);
+router.post('/university-requirements-report/compile', compileRequirementsReport);
+router.post('/university-requirements-report/save', authenticateToken, saveRequirementsReport);
+router.get('/university-requirements-report/my-reports', authenticateToken, getUserSavedRequirementsReports);
+router.get('/university-requirements-report/my-reports/:id', authenticateToken, getSavedRequirementsReportById);
+router.delete('/university-requirements-report/my-reports/:id', authenticateToken, deleteUserSavedRequirementsReport);
+router.post('/university-requirements-report/my-reports/:id/regenerate', authenticateToken, regenerateRequirementsReport);
+
 export default router;
 
 
