@@ -352,7 +352,7 @@ export const HomePage: React.FC = () => {
           {/* 7. Subtle, Quiet Trust Section (Thin Dividers, Text-Based Stats) */}
           <div className="hero-anim-stats mt-10 pt-6 border-t border-slate-200/70 dark:border-slate-800 grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 text-center">
             <div className="space-y-1">
-              <div className="text-2xl sm:text-3xl font-heading font-semibold text-brand-navy dark:text-white tabular-nums">{formatNumber(948)}+</div>
+              <div className="text-2xl sm:text-3xl font-heading font-semibold text-brand-navy dark:text-white tabular-nums">{formatNumber(5000)}+</div>
               <p className="text-xs text-slate-700 dark:text-slate-300 font-medium">{isBengali ? 'যাচাইকৃত বিশ্ববিদ্যালয়' : 'Verified Universities'}</p>
               <p className="text-[11px] text-slate-500 dark:text-slate-400">IAU WHED accredited registries</p>
             </div>

@@ -134,11 +134,11 @@ assert(
 // 6. VERIFIED TRUST STATISTICS
 console.log('\n6. Audit Verified Trust Statistics (No Artificial Stats):');
 assert(
-  homePageTsx.includes('formatNumber(948)') &&
+  homePageTsx.includes('formatNumber(5000)') &&
   homePageTsx.includes('formatNumber(42)') &&
   homePageTsx.includes('formatNumber(20)'),
   'VerifiedData',
-  'Statistics verified against actual dataset records (948 unis, 42 destinations, 20 scholarships)'
+  'Statistics verified against actual dataset records (5000+ unis, 42 destinations, 20 scholarships)'
 );
 assert(
   homePageTsx.includes('grid-cols-2 md:grid-cols-4') && homePageTsx.includes('border-t'),

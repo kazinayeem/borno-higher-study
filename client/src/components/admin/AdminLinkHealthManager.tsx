@@ -431,8 +431,8 @@ export const AdminLinkHealthManager: React.FC = () => {
               className="px-3 py-2 rounded-lg border border-slate-200 text-xs font-medium text-slate-700 bg-white"
             >
               <option value="ALL">All Categories</option>
-              <option value="UNIVERSITY">Universities (948)</option>
-              <option value="ADMISSIONS">Admissions (948)</option>
+              <option value="UNIVERSITY">Universities (5,000+)</option>
+              <option value="ADMISSIONS">Admissions (5,000+)</option>
               <option value="SCHOLARSHIP">Scholarships (20)</option>
               <option value="VISA">Visa Intelligence (57)</option>
               <option value="RESEARCH_DOI">Research DOIs (8)</option>

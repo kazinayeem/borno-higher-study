@@ -171,7 +171,7 @@ export const UniversitiesPage: React.FC = () => {
     <div className="min-h-screen bg-[#FBFBFA] dark:bg-[#0B132B] py-10 transition-colors">
       <SeoHead
         title="Accredited University & College Directory — Borno Higher Study"
-        description="Search 948+ accredited universities, colleges, business schools, and institutes of technology across 42 study destinations. Verified tuition fees, entry criteria, and official links."
+        description="Search 5,000+ accredited universities, colleges, business schools, and institutes of technology across 42 study destinations. Verified tuition fees, entry criteria, and official links."
         canonicalPath="/universities"
       />
 
@@ -186,7 +186,7 @@ export const UniversitiesPage: React.FC = () => {
             Explore Accredited Universities & Colleges
           </h1>
           <p className="text-slate-600 dark:text-slate-300 text-sm sm:text-base leading-relaxed">
-            Search 948+ verified universities, institutes of technology, and business schools worldwide. Filter by degree level, language prerequisites, tuition bands, and accreditation status.
+            Search 5,000+ verified universities, institutes of technology, and business schools worldwide. Filter by degree level, language prerequisites, tuition bands, and accreditation status.
           </p>
         </PageIntro>
 

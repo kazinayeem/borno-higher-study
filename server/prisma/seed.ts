@@ -177,35 +177,24 @@ async function main() {
   }
   console.log(`✔ Seeded ${COUNTRIES_DATA.length} Countries in SQLite`);
 
-  // 4. Seed Universities and their Programs
+  // 4. Seed Universities and their Programs (Batched for 5,000+ Institutions)
   let totalProgramsCount = 0;
   const uniSlugToIdMap = new Map<string, string>();
 
+  const existingUnis = await prisma.university.findMany({
+    select: { id: true, slug: true },
+  });
+  for (const u of existingUnis) {
+    uniSlugToIdMap.set(u.slug, u.id);
+  }
+
+  const newUnisToCreate: any[] = [];
   for (const u of UNIVERSITIES_DATA) {
     const countryId = countryIdMap.get(u.countrySlug);
     if (!countryId) continue;
 
-    const uniRecord = await prisma.university.upsert({
-      where: { slug: u.slug },
-      update: {
-        name: u.name,
-        countryId,
-        cityName: u.cityName,
-        type: u.type,
-        institutionType: u.institutionType || 'UNIVERSITY',
-        accreditationStatus: u.accreditationStatus || 'RECOGNIZED',
-        accreditationBody: u.accreditationBody || null,
-        qualificationsOffered: (u.qualificationsOffered || ['BACHELOR', 'MASTER', 'PHD']).join(','),
-        qsRanking: u.qsRanking,
-        timesRanking: u.timesRanking,
-        acceptanceRate: u.acceptanceRate,
-        websiteUrl: u.websiteUrl,
-        admissionsUrl: u.admissionsUrl,
-        sourceUrl: u.sourceUrl,
-        internationalOfficeEmail: u.internationalOfficeEmail,
-        verificationStatus: u.verificationStatus,
-      },
-      create: {
+    if (!uniSlugToIdMap.has(u.slug)) {
+      newUnisToCreate.push({
         id: u.id,
         name: u.name,
         slug: u.slug,
@@ -217,89 +206,95 @@ async function main() {
         accreditationBody: u.accreditationBody || null,
         levelsOffered: 'BACHELOR,MASTER,PHD',
         qualificationsOffered: (u.qualificationsOffered || ['BACHELOR', 'MASTER', 'PHD']).join(','),
-        qsRanking: u.qsRanking,
-        timesRanking: u.timesRanking,
-        acceptanceRate: u.acceptanceRate,
+        qsRanking: u.qsRanking || null,
+        timesRanking: u.timesRanking || null,
+        acceptanceRate: u.acceptanceRate || null,
         websiteUrl: u.websiteUrl,
         admissionsUrl: u.admissionsUrl,
         sourceUrl: u.sourceUrl,
         internationalOfficeEmail: u.internationalOfficeEmail,
-        verificationStatus: u.verificationStatus,
-      },
-    });
-    uniSlugToIdMap.set(u.slug, uniRecord.id);
+        verificationStatus: u.verificationStatus || 'VERIFIED',
+      });
+      uniSlugToIdMap.set(u.slug, u.id);
+    }
+  }
 
-    // Seed programs for this university
-    if (u.programs && u.programs.length > 0) {
-      for (const p of u.programs) {
-        await prisma.program.upsert({
-          where: { id: p.id },
-          update: {
-            name: p.name,
-            slug: p.slug,
-            universityId: uniRecord.id,
-            subjectName: p.subject,
-            subjectCategory: p.subjectCategory,
-            degreeLevel: p.degreeLevel,
-            durationMonths: p.durationMonths,
-            creditsEcts: p.creditsEcts,
-            languageOfInstruction: p.language || 'English',
-            annualTuitionLocal: p.annualTuitionLocal,
-            currencyCode: p.currencyCode,
-            applicationFeeLocal: p.applicationFeeLocal || 0,
-            programUrl: p.programUrl,
-            prerequisites: p.prerequisites,
-          },
-          create: {
-            id: p.id,
-            name: p.name,
-            slug: p.slug,
-            universityId: uniRecord.id,
-            subjectName: p.subject,
-            subjectCategory: p.subjectCategory,
-            degreeLevel: p.degreeLevel,
-            durationMonths: p.durationMonths,
-            creditsEcts: p.creditsEcts,
-            languageOfInstruction: p.language || 'English',
-            annualTuitionLocal: p.annualTuitionLocal,
-            currencyCode: p.currencyCode,
-            applicationFeeLocal: p.applicationFeeLocal || 0,
-            programUrl: p.programUrl,
-            prerequisites: p.prerequisites,
-          },
+  if (newUnisToCreate.length > 0) {
+    const CHUNK_SIZE = 250;
+    for (let i = 0; i < newUnisToCreate.length; i += CHUNK_SIZE) {
+      const chunk = newUnisToCreate.slice(i, i + CHUNK_SIZE);
+      await prisma.university.createMany({ data: chunk });
+    }
+  }
+
+  // Seed Programs in batches
+  const existingPrograms = await prisma.program.findMany({
+    select: { id: true },
+  });
+  const existingProgramIds = new Set(existingPrograms.map((p) => p.id));
+
+  const newProgramsToCreate: any[] = [];
+  const newEngReqsToCreate: any[] = [];
+
+  for (const u of UNIVERSITIES_DATA) {
+    const uniId = uniSlugToIdMap.get(u.slug);
+    if (!uniId || !u.programs) continue;
+
+    for (const p of u.programs) {
+      if (!existingProgramIds.has(p.id)) {
+        newProgramsToCreate.push({
+          id: p.id,
+          name: p.name,
+          slug: p.slug,
+          universityId: uniId,
+          subjectName: p.subject,
+          subjectCategory: p.subjectCategory,
+          degreeLevel: p.degreeLevel,
+          durationMonths: p.durationMonths,
+          creditsEcts: p.creditsEcts,
+          languageOfInstruction: p.language || 'English',
+          annualTuitionLocal: p.annualTuitionLocal,
+          currencyCode: p.currencyCode,
+          applicationFeeLocal: p.applicationFeeLocal || 0,
+          programUrl: p.programUrl,
+          prerequisites: p.prerequisites,
         });
+        existingProgramIds.add(p.id);
 
-        // Seed English requirement if available
         if (p.ieltsOverall) {
-          await prisma.englishRequirement.upsert({
-            where: { programId: p.id },
-            update: {
-              ieltsOverall: p.ieltsOverall,
-              ieltsReading: p.ieltsSubscoreMin,
-              ieltsListening: p.ieltsSubscoreMin,
-              ieltsSpeaking: p.ieltsSubscoreMin,
-              ieltsWriting: p.ieltsSubscoreMin,
-              toeflIbtOverall: p.toeflOverall,
-              pteOverall: p.pteOverall,
-              sourceUrl: p.programUrl,
-            },
-            create: {
-              programId: p.id,
-              ieltsOverall: p.ieltsOverall,
-              ieltsReading: p.ieltsSubscoreMin,
-              ieltsListening: p.ieltsSubscoreMin,
-              ieltsSpeaking: p.ieltsSubscoreMin,
-              ieltsWriting: p.ieltsSubscoreMin,
-              toeflIbtOverall: p.toeflOverall,
-              pteOverall: p.pteOverall,
-              sourceUrl: p.programUrl,
-            },
+          newEngReqsToCreate.push({
+            programId: p.id,
+            ieltsOverall: p.ieltsOverall,
+            ieltsReading: p.ieltsSubscoreMin,
+            ieltsListening: p.ieltsSubscoreMin,
+            ieltsSpeaking: p.ieltsSubscoreMin,
+            ieltsWriting: p.ieltsSubscoreMin,
+            toeflIbtOverall: p.toeflOverall,
+            pteOverall: p.pteOverall,
+            sourceUrl: p.programUrl,
           });
         }
-        totalProgramsCount++;
       }
     }
   }
+
+  if (newProgramsToCreate.length > 0) {
+    const CHUNK_SIZE = 250;
+    for (let i = 0; i < newProgramsToCreate.length; i += CHUNK_SIZE) {
+      const chunk = newProgramsToCreate.slice(i, i + CHUNK_SIZE);
+      await prisma.program.createMany({ data: chunk });
+    }
+  }
+
+  if (newEngReqsToCreate.length > 0) {
+    const CHUNK_SIZE = 250;
+    for (let i = 0; i < newEngReqsToCreate.length; i += CHUNK_SIZE) {
+      const chunk = newEngReqsToCreate.slice(i, i + CHUNK_SIZE);
+      await prisma.englishRequirement.createMany({ data: chunk });
+    }
+  }
+
+  totalProgramsCount = existingProgramIds.size;
   console.log(`✔ Seeded ${UNIVERSITIES_DATA.length} Universities and ${totalProgramsCount} Programs in SQLite`);
 
   // 5. Seed Scholarships

@@ -103,7 +103,7 @@ export const en = {
     heroSubtitle: 'Explore accredited international universities, transparent admission prerequisites, verified government scholarships, and living costs in Bangladeshi Taka—without agent bias.',
     studentPortalAction: 'Student Portal',
     adminPortalAction: 'Super Admin Portal',
-    searchPlaceholder: 'Search 948 universities, 42 countries, or scholarships (e.g., TUM, DAAD, Finland, IELTS 6.5)...',
+    searchPlaceholder: 'Search 5,000+ universities, 42 countries, or scholarships (e.g., TUM, DAAD, Finland, IELTS 6.5)...',
     searchButton: 'Search Catalog',
     quickFilters: 'Popular Benchmarks:',
     statDestinations: 'Study Destinations',
@@ -131,7 +131,7 @@ export const en = {
 
   universities: {
     catalogTitle: 'Global Higher Education Directory',
-    catalogSubtitle: 'Explore 948 state-accredited universities, colleges, and institutes of technology across 42 study destinations.',
+    catalogSubtitle: 'Explore 5,000+ state-accredited universities, colleges, and institutes of technology across 42 study destinations.',
     searchPlaceholder: 'Search by university name, city, or discipline...',
     filterByCountry: 'Filter by Destination',
     filterByType: 'Institution Type',
