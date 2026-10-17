@@ -291,7 +291,7 @@ export const AdminDeadlinesManager: React.FC = () => {
                 {filtered.map((d) => (
                   <tr key={d.id} className="hover:bg-slate-50/70 transition-colors">
                     <td className="py-3.5 px-4">
-                      <div className="font-bold text-navy-950 font-serif">
+                      <div className="font-heading font-semibold text-brand-navy">
                         {d.university?.name || 'Institution-wide'}
                       </div>
                       <div className="text-[11px] text-slate-500">
@@ -391,7 +391,7 @@ export const AdminDeadlinesManager: React.FC = () => {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-navy-950/60 backdrop-blur-xs">
           <div className="bg-white w-full max-w-xl rounded-2xl border border-slate-200 shadow-2xl p-6 sm:p-8 space-y-4 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-              <h3 className="text-lg font-bold text-navy-950 font-serif">
+              <h3 className="text-lg font-heading font-semibold text-brand-navy tracking-tight">
                 Create Application Intake & Deadline
               </h3>
               <button
@@ -587,7 +587,7 @@ export const AdminDeadlinesManager: React.FC = () => {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-navy-950/60 backdrop-blur-xs">
           <div className="bg-white w-full max-w-lg rounded-2xl border border-slate-200 shadow-2xl p-6 sm:p-8 space-y-4">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-              <h3 className="text-lg font-bold text-navy-950 font-serif">
+              <h3 className="text-lg font-heading font-semibold text-brand-navy tracking-tight">
                 Edit or Extend Application Deadline
               </h3>
               <button

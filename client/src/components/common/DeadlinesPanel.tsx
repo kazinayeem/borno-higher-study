@@ -246,7 +246,7 @@ export const DeadlinesPanel: React.FC<DeadlinesPanelProps> = ({
             <span className="p-2 rounded-lg bg-teal-50 text-teal-700">
               <Calendar className="w-5 h-5" />
             </span>
-            <h2 className="text-xl sm:text-2xl font-bold text-navy-950 font-serif">
+            <h2 className="text-xl sm:text-2xl font-heading font-semibold text-brand-navy tracking-tight">
               Application Deadlines & Intakes
             </h2>
           </div>
@@ -395,7 +395,7 @@ export const DeadlinesPanel: React.FC<DeadlinesPanelProps> = ({
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
                   <div>
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="text-base font-bold text-navy-950 font-serif">
+                      <span className="text-base font-heading font-semibold text-brand-navy">
                         {deadline.intakeSemester} {deadline.academicYear}
                       </span>
                       {deadline.roundName && (

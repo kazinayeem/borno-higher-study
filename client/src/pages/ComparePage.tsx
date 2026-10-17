@@ -24,9 +24,9 @@ export const ComparePage: React.FC = () => {
     .filter(Boolean) as typeof UNIVERSITIES_DATA;
 
   return (
-    <div className="min-h-screen bg-slate-50 py-10">
+    <div className="min-h-screen bg-[#FBFBFA] py-10">
       <SeoHead
-        title="Compare Universities Side-by-Side | Borno Higher Study"
+        title="Side-by-Side University Comparison Matrix — Borno Higher Study"
         description="Benchmark up to four international universities side-by-side. Compare annual tuition fees, world rankings, acceptance rates, and minimum IELTS criteria."
         canonicalPath="/compare"
       />
@@ -34,22 +34,22 @@ export const ComparePage: React.FC = () => {
         {/* Header */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-50 text-amber-800 text-xs font-bold border border-amber-200">
-              <Scale className="w-4 h-4 text-amber-600" />
-              <span>Multi-University Benchmarking</span>
+            <div className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-teal-800 dark:text-teal-400">
+              <span className="w-1.5 h-1.5 rounded-full bg-teal-600 dark:bg-teal-400"></span>
+              <span>Multi-Institution Benchmark Matrix</span>
             </div>
-            <h1 className="text-3xl font-extrabold text-brand-navy mt-1">
+            <h1 className="text-3xl font-heading font-semibold text-brand-navy mt-2 tracking-tight">
               University Comparison Matrix
             </h1>
             <p className="text-xs sm:text-sm text-slate-500 mt-1">
-              Compare rankings, verified tuition ranges, living expenses, and work rights side by side (Max 4).
+              Compare rankings, verified tuition ranges, living expenses, and work rights side by side (up to 4 institutions).
             </p>
           </div>
 
           {selectedUnis.length > 0 && (
             <button
               onClick={clearCompare}
-              className="text-xs font-bold text-rose-600 hover:bg-rose-50 px-3 py-1.5 rounded-lg border border-rose-200"
+              className="text-xs font-semibold text-rose-700 hover:bg-rose-50 px-3 py-1.5 rounded-lg border border-rose-200 transition"
             >
               Clear Comparison Tray
             </button>

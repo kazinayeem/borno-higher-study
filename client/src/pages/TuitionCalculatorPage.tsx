@@ -13,6 +13,7 @@ import {
   CheckCircle,
 } from 'lucide-react';
 import { SeoHead } from '../components/common/SeoHead.js';
+import { PageIntro } from '../components/motion/index.js';
 
 export const TuitionCalculatorPage: React.FC = () => {
   const [selectedCountrySlug, setSelectedCountrySlug] = useState('finland');
@@ -58,31 +59,31 @@ export const TuitionCalculatorPage: React.FC = () => {
   }, [selectedCountrySlug, selectedUniSlug, selectedProgramId, durationMonths, scholarshipId, monthlyLivingOverride]);
 
   return (
-    <div className="min-h-screen bg-slate-50 py-10">
+    <div className="min-h-screen bg-[#FBFBFA] dark:bg-[#0B132B] py-10 transition-colors">
       <SeoHead
-        title="Tuition & Living Cost Calculator in BDT | Borno Higher Study"
-        description="Calculate degree tuition fees, estimated living costs, and scholarship deductions with real-time conversion to Bangladeshi Taka (BDT) for 30 study abroad countries."
+        title="Tuition & Living Cost Calculator in BDT — Borno Higher Study"
+        description="Calculate degree tuition fees, estimated living costs, and scholarship deductions with real-time conversion to Bangladeshi Taka (BDT) for 42 study abroad countries."
         canonicalPath="/calculator"
       />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
         {/* Header */}
-        <div className="text-center max-w-3xl mx-auto space-y-3">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-teal-50 text-teal-800 text-xs font-bold border border-teal-200">
-            <Calculator className="w-4 h-4 text-teal-600" />
-            <span>Interactive Tuition & Study Cost Calculator</span>
+        <PageIntro className="text-center max-w-3xl mx-auto space-y-3">
+          <div className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-teal-800 dark:text-teal-400">
+            <span className="w-1.5 h-1.5 rounded-full bg-teal-600 dark:bg-teal-400"></span>
+            <span>Financial Solvency &amp; Living Benchmark Engine</span>
           </div>
-          <h1 className="text-3xl sm:text-5xl font-extrabold text-brand-navy">
-            Estimate Study Abroad Investment
+          <h1 className="text-3xl sm:text-5xl font-heading font-semibold text-brand-navy dark:text-white tracking-tight">
+            Tuition & Study Investment Calculator
           </h1>
-          <p className="text-slate-600 text-sm sm:text-base leading-relaxed">
-            Calculate verified tuition fees, estimated living expenses, and scholarship waivers with real-time conversion into Bangladeshi Taka (BDT).
+          <p className="text-slate-600 dark:text-slate-300 text-sm sm:text-base leading-relaxed">
+            Calculate verified tuition rates, statutory living allowances, and scholarship waivers with deterministic conversion to <strong>Bangladeshi Taka (BDT)</strong> and foreign currencies.
           </p>
-        </div>
+        </PageIntro>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           {/* Controls Column (5 cols) */}
-          <div className="lg:col-span-5 bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-card space-y-5">
-            <h3 className="font-bold text-lg text-brand-navy flex items-center gap-2">
+          <div className="lg:col-span-5 bg-white dark:bg-slate-900 p-6 sm:p-8 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-card space-y-5">
+            <h3 className="font-heading font-semibold text-lg text-brand-navy dark:text-white flex items-center gap-2">
               <Coins className="w-5 h-5 text-teal-600" />
               Configure Study Plan
             </h3>
@@ -216,18 +217,18 @@ export const TuitionCalculatorPage: React.FC = () => {
           </div>
 
           {/* Results Breakdown Column (7 cols) */}
-          <div className="lg:col-span-7 bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-card space-y-6">
+          <div className="lg:col-span-7 bg-white p-6 sm:p-8 rounded-3xl border border-slate-200/80 shadow-card space-y-6">
             <div className="flex items-center justify-between pb-4 border-b border-slate-100">
               <div>
-                <h3 className="font-extrabold text-xl text-brand-navy">
+                <h3 className="font-heading font-semibold text-xl text-brand-navy tracking-tight">
                   Comprehensive Cost Breakdown
                 </h3>
-                <p className="text-xs text-slate-500 mt-0.5">
+                <p className="text-xs text-slate-500 mt-0.5 tabular-nums">
                   Live Exchange Rate: 1 {calculation?.currency?.localCode} = {calculation?.currency?.exchangeRateToBdt} BDT
                 </p>
               </div>
 
-              <div className="flex items-center gap-1.5 bg-emerald-50 text-emerald-800 px-3 py-1 rounded-full text-xs font-bold border border-emerald-200/60">
+              <div className="flex items-center gap-1.5 bg-emerald-50 text-emerald-800 px-3 py-1 rounded-full text-xs font-semibold border border-emerald-200/60">
                 <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
                 <span>Verified Breakdown</span>
               </div>
@@ -238,18 +239,18 @@ export const TuitionCalculatorPage: React.FC = () => {
                 {/* Tuition Cost Row */}
                 <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/60 flex items-center justify-between">
                   <div>
-                    <span className="text-xs font-bold text-slate-800 block">
+                    <span className="text-xs font-semibold text-slate-800 block">
                       Total Tuition Fee ({calculation.duration.years} Years)
                     </span>
-                    <span className="text-xs text-slate-500">
+                    <span className="text-xs text-slate-500 tabular-nums">
                       Annual: {calculation.currency.localSymbol} {calculation.breakdown.annualTuitionLocal.toLocaleString()}
                     </span>
                   </div>
                   <div className="text-right">
-                    <span className="text-base font-extrabold text-brand-navy block">
+                    <span className="text-base font-heading font-semibold text-brand-navy block tabular-nums">
                       {calculation.currency.localSymbol} {calculation.breakdown.totalTuitionLocal.toLocaleString()}
                     </span>
-                    <span className="text-xs font-semibold text-teal-700">
+                    <span className="text-xs font-medium text-teal-700 tabular-nums">
                       ~{calculation.breakdown.totalTuitionBdt.toLocaleString()} BDT
                     </span>
                   </div>
@@ -258,18 +259,18 @@ export const TuitionCalculatorPage: React.FC = () => {
                 {/* Living Expenses Row */}
                 <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/60 flex items-center justify-between">
                   <div>
-                    <span className="text-xs font-bold text-slate-800 block">
+                    <span className="text-xs font-semibold text-slate-800 block">
                       Estimated Living Costs ({calculation.duration.months} Months)
                     </span>
-                    <span className="text-xs text-slate-500">
+                    <span className="text-xs text-slate-500 tabular-nums">
                       Estimated ~{calculation.currency.localSymbol} {calculation.breakdown.monthlyLivingLocal}/month
                     </span>
                   </div>
                   <div className="text-right">
-                    <span className="text-base font-extrabold text-brand-navy block">
+                    <span className="text-base font-heading font-semibold text-brand-navy block tabular-nums">
                       {calculation.currency.localSymbol} {calculation.breakdown.totalLivingLocal.toLocaleString()}
                     </span>
-                    <span className="text-xs font-semibold text-teal-700">
+                    <span className="text-xs font-medium text-teal-700 tabular-nums">
                       ~{calculation.breakdown.totalLivingBdt.toLocaleString()} BDT
                     </span>
                   </div>
@@ -279,7 +280,7 @@ export const TuitionCalculatorPage: React.FC = () => {
                 {calculation.breakdown.scholarshipDeductionLocal > 0 && (
                   <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200/60 flex items-center justify-between">
                     <div>
-                      <span className="text-xs font-bold text-amber-900 block flex items-center gap-1">
+                      <span className="text-xs font-semibold text-amber-900 block flex items-center gap-1">
                         <Sparkles className="w-3.5 h-3.5 text-amber-600" />
                         Scholarship Waiver Deduction (Estimated)
                       </span>
@@ -288,10 +289,10 @@ export const TuitionCalculatorPage: React.FC = () => {
                       </span>
                     </div>
                     <div className="text-right">
-                      <span className="text-base font-extrabold text-amber-700 block">
+                      <span className="text-base font-heading font-semibold text-amber-700 block tabular-nums">
                         - {calculation.currency.localSymbol} {calculation.breakdown.scholarshipDeductionLocal.toLocaleString()}
                       </span>
-                      <span className="text-xs font-semibold text-amber-800">
+                      <span className="text-xs font-medium text-amber-800 tabular-nums">
                         - {calculation.breakdown.scholarshipDeductionBdt.toLocaleString()} BDT
                       </span>
                     </div>
@@ -306,10 +307,10 @@ export const TuitionCalculatorPage: React.FC = () => {
                   </div>
 
                   <div className="flex items-baseline justify-between">
-                    <div className="text-3xl sm:text-4xl font-extrabold text-amber-400">
+                    <div className="text-3xl sm:text-4xl font-heading font-semibold text-amber-400 tabular-nums">
                       {calculation.currency.localSymbol} {calculation.breakdown.netEstimatedCostLocal.toLocaleString()}
                     </div>
-                    <div className="text-lg sm:text-xl font-bold text-white bg-white/10 px-3 py-1.5 rounded-xl border border-white/20">
+                    <div className="text-lg sm:text-xl font-heading font-semibold text-white bg-white/10 px-3 py-1.5 rounded-xl border border-white/20 tabular-nums">
                       ~{calculation.breakdown.netEstimatedCostBdt.toLocaleString()} BDT
                     </div>
                   </div>

@@ -9,6 +9,7 @@ import { Pagination } from '../components/common/Pagination.js';
 import { EmptyState } from '../components/common/EmptyState.js';
 import { CardSkeleton } from '../components/common/LoadingSkeleton.js';
 import { Search, Filter, GraduationCap, X, Globe, Building2, Sparkles, ArrowUpDown } from 'lucide-react';
+import { PageIntro, StaggerGroup } from '../components/motion/index.js';
 
 const CONTINENTS = [
   'All Continents',
@@ -167,30 +168,30 @@ export const UniversitiesPage: React.FC = () => {
   ].filter(Boolean) as { key: string; label: string; onClear: () => void }[];
 
   return (
-    <div className="min-h-screen bg-slate-50 py-10">
+    <div className="min-h-screen bg-[#FBFBFA] dark:bg-[#0B132B] py-10 transition-colors">
       <SeoHead
-        title="Explore 150+ Global Universities & Colleges | Borno Higher Study"
-        description="Search accredited universities, colleges, business schools, institutes of technology, and pathway providers across Europe, North America, Asia, and Oceania."
+        title="Accredited University & College Directory — Borno Higher Study"
+        description="Search 948+ accredited universities, colleges, business schools, and institutes of technology across 42 study destinations. Verified tuition fees, entry criteria, and official links."
         canonicalPath="/universities"
       />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
         {/* Header */}
-        <div className="text-center max-w-3xl mx-auto space-y-3">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-teal-50 text-teal-800 text-xs font-bold border border-teal-200">
-            <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-            <span>150+ Verified Global Institutions</span>
+        <PageIntro className="text-center max-w-3xl mx-auto space-y-3">
+          <div className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-teal-800 dark:text-teal-400">
+            <span className="w-1.5 h-1.5 rounded-full bg-teal-600 dark:bg-teal-400"></span>
+            <span>Global Higher Education Directory</span>
           </div>
-          <h1 className="text-3xl sm:text-5xl font-extrabold text-brand-navy">
-            Explore Global Institutions & Colleges
+          <h1 className="text-3xl sm:text-5xl font-heading font-semibold text-brand-navy dark:text-white tracking-tight">
+            Explore Accredited Universities & Colleges
           </h1>
-          <p className="text-slate-600 text-sm sm:text-base leading-relaxed">
-            Search verified universities, business schools, colleges, institutes of technology, and pathway providers worldwide.
+          <p className="text-slate-600 dark:text-slate-300 text-sm sm:text-base leading-relaxed">
+            Search 948+ verified universities, institutes of technology, and business schools worldwide. Filter by degree level, language prerequisites, tuition bands, and accreditation status.
           </p>
-        </div>
+        </PageIntro>
 
         {/* Filter Controls Bar */}
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-card space-y-4">
+        <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-card space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
             {/* Search Input */}
             <div className="lg:col-span-2 relative">
@@ -355,11 +356,11 @@ export const UniversitiesPage: React.FC = () => {
           </div>
         ) : paginatedUniversities.length > 0 ? (
           <>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <StaggerGroup className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" itemSelector=".group">
               {paginatedUniversities.map((uni) => (
                 <UniversityCard key={uni.id} university={uni} />
               ))}
-            </div>
+            </StaggerGroup>
 
             <Pagination
               currentPage={currentPage}

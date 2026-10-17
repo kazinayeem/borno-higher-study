@@ -102,6 +102,12 @@ export const CountryDetailsPage: React.FC = () => {
             </div>
 
             <div className="flex flex-wrap items-center gap-3">
+              <Link
+                to={`/visa-intelligence/country/${country.code}`}
+                className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-amber-500 text-white text-xs font-bold hover:bg-amber-600 transition-colors shadow-sm"
+              >
+                <span>Visa Intelligence &amp; Centres</span>
+              </Link>
               <a
                 href={country.officialPortalUrl}
                 target="_blank"

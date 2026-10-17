@@ -61,9 +61,9 @@ export const CountriesPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 py-12">
+    <div className="min-h-screen bg-[#FBFBFA] py-12">
       <SeoHead
-        title="Explore 30 International Study Destinations | Borno Higher Study"
+        title="Explore 42 Study Destinations & Education Systems — Borno Higher Study"
         description="Comprehensive directory of international higher education systems across Europe, North America, Asia, Oceania, South America, and Africa. Verified living costs, tuition rates, and visa regulations."
         canonicalPath="/countries"
       />
@@ -71,15 +71,15 @@ export const CountriesPage: React.FC = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
         {/* Header */}
         <div className="text-center max-w-3xl mx-auto space-y-4">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-teal-50 text-teal-800 text-xs font-bold border border-teal-200">
-            <Compass className="w-4 h-4 text-teal-600" />
-            <span>Global Higher Education Directory</span>
+          <div className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-teal-800 dark:text-teal-400">
+            <span className="w-1.5 h-1.5 rounded-full bg-teal-600 dark:bg-teal-400"></span>
+            <span>42 Profiled Study Destinations</span>
           </div>
-          <h1 className="text-3xl sm:text-5xl font-extrabold text-brand-navy">
-            Explore Countries & Continents
+          <h1 className="text-3xl sm:text-5xl font-heading font-semibold text-brand-navy tracking-tight">
+            Explore Study Destinations Worldwide
           </h1>
           <p className="text-slate-600 text-sm sm:text-base leading-relaxed">
-            Discover recognized university systems, compare tuition structures, check post-study work visa rights, and view official government portals across all seven continents.
+            Discover recognized university systems, compare tuition benchmarks, check post-study work visa rights, and view official government portals across all seven continents.
           </p>
 
           {/* Search bar */}

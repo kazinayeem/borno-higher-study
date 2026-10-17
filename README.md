@@ -257,6 +257,12 @@ npm run test:english-tests
 
 # Run MOI Acceptance & English Waiver test suite
 npm run test:moi
+
+# Run Live Global Visa Intelligence & Bangladesh Centre Finder test suite
+npm run test:visa
+
+# Run Global Academic Eligibility & Subject Requirements test suite
+npm run test:academic
 ```
 
 ### Verified Test Suites:
@@ -265,6 +271,9 @@ npm run test:moi
 - **Technical SEO & Quality Assurance (`test:seo`)**: 24/24 automated checks verifying robots.txt, XML sitemap index, country & university sitemaps, duplicate slug prevention, and canonical metadata.
 - **English Test Comparison & Acceptance Module (`test:english-tests`)**: 12/12 automated checks verifying matrix generation (IELTS/PTE/TOEFL test-centre vs. at-home), official Bangladesh fee tracking, non-inference of online exams, course-specific and degree-specific requirements, stale source detection, student reporting queue, admin-only fee/policy updates, and complete revision audit trails.
 - **MOI Acceptance & English Waiver Module (`test:moi`)**: 12/12 automated checks validating public directory queries, initial benchmark examples (Aston, Alberta, Ottawa, McGill, Maynooth), non-acceptance handling (Oxford & Cambridge), visa vs. academic separation notices, interactive eligibility questionnaire outcomes, student correction reporting, and Super Admin approval with revision logging.
+- **Live Global Visa Intelligence & Bangladesh Centre Finder (`test:visa`)**: 15/15 automated checks validating unmixed country-by-country statistics, compatible calculation bases (`Approval = approved ÷ decided × 100`), explicit missing data handling (`UNAVAILABLE` flags for Lithuania/Portugal without fabricated figures), 6-question Bangladesh centre matcher with legally verified India travel rules (`NO` for UK/US/CA/DE/SE/FI; `YES` for Lithuania & Portugal; `POSSIBLY` for Poland), live search integration with official domain badges and rate limits, official diplomatic social updates, student correction queue, and Super Admin verification workflow.
+- **Global Academic Eligibility & Subject Requirements Engine (`test:academic`)**: 12/12 automated checks validating independent SSC and HSC GPA recording, degree-level CGPA thresholds (Bachelor's, Master's, PhD), STEM/health/business prerequisite subject grades, grading scale preservation (BD GPA 5.0 vs University CGPA 4.0 vs German 1.0-5.0 vs UK Honours), official credential evaluators (ECCTIS, Anabin, WES), UK 12-year HSC direct entry vs Foundation Programme conditional outcomes, student zero-document eligibility evaluation engine, student correction proposal reporting, and Super Admin moderation queue with revision logging.
+- **Premium Research, Education Blog & Super Admin Content Platform (`test:content`)**: 30/30 automated checks validating 103 distinct educational articles (zero duplicate slugs, 100% long-form >1,000 words), 8 distinct categories, 4 expert author profiles, peer-reviewed research papers with valid DOIs and independent explainers, transparent university and country comparison matrices, public search and filtering APIs, reader factual error reporting, Super Admin Editorial Studio (`/super-admin/content`), AI evidence-grounded drafting pipeline (strictly saves as `DRAFT`, never auto-publishes), and source verification auditing.
 
 ---
 

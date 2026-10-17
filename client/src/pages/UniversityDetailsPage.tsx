@@ -113,7 +113,7 @@ export const UniversityDetailsPage: React.FC = () => {
                 </span>
               </div>
 
-              <h1 className="text-3xl sm:text-4xl font-extrabold text-brand-navy">
+              <h1 className="text-3xl sm:text-4xl font-heading font-semibold text-brand-navy tracking-tight">
                 {university.name}
               </h1>
 
@@ -134,7 +134,7 @@ export const UniversityDetailsPage: React.FC = () => {
             <div className="flex flex-wrap items-center gap-3">
               <button
                 onClick={() => (isCompared ? removeFromCompare(university.slug) : addToCompare(university.slug))}
-                className={`px-4 py-2.5 rounded-xl border text-xs font-bold transition-colors flex items-center gap-1.5 ${
+                className={`px-4 py-2.5 rounded-xl border text-xs font-semibold transition-colors flex items-center gap-1.5 ${
                   isCompared
                     ? 'bg-amber-500 text-white border-amber-500'
                     : 'bg-white text-slate-700 hover:bg-amber-50 border-slate-200'
@@ -146,7 +146,7 @@ export const UniversityDetailsPage: React.FC = () => {
 
               <button
                 onClick={() => toggleSaveUniversity(university.id)}
-                className={`px-4 py-2.5 rounded-xl border text-xs font-bold transition-colors flex items-center gap-1.5 ${
+                className={`px-4 py-2.5 rounded-xl border text-xs font-semibold transition-colors flex items-center gap-1.5 ${
                   isSaved
                     ? 'bg-teal-600 text-white border-teal-600'
                     : 'bg-white text-slate-700 hover:bg-teal-50 border-slate-200'
@@ -160,7 +160,7 @@ export const UniversityDetailsPage: React.FC = () => {
                 href={university.admissionsUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="px-5 py-2.5 rounded-xl bg-brand-navy hover:bg-brand-navy-light text-white text-xs font-bold transition-colors inline-flex items-center gap-1.5"
+                className="px-5 py-2.5 rounded-xl bg-brand-navy hover:bg-brand-navy-light text-white text-xs font-semibold transition-colors inline-flex items-center gap-1.5 shadow-2xs"
               >
                 <span>Official Admissions</span>
                 <ExternalLink className="w-3.5 h-3.5" />
@@ -196,7 +196,7 @@ export const UniversityDetailsPage: React.FC = () => {
             {country && (
               <Link
                 to={`/countries/${country.slug}`}
-                className="font-bold text-teal-700 hover:underline flex items-center gap-1"
+                className="font-semibold text-teal-700 hover:underline flex items-center gap-1"
               >
                 <span>Explore student living guide for {country.name}</span>
                 <span>→</span>
@@ -217,7 +217,7 @@ export const UniversityDetailsPage: React.FC = () => {
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-2xl font-bold text-brand-navy">
+              <h2 className="text-2xl font-heading font-semibold text-brand-navy tracking-tight">
                 Verified Degree Programs ({university.programs.length})
               </h2>
               <p className="text-xs text-slate-500">
@@ -230,25 +230,25 @@ export const UniversityDetailsPage: React.FC = () => {
             {university.programs.map((prog) => (
               <div
                 key={prog.id}
-                className="bg-white p-6 rounded-2xl border border-slate-200 shadow-card flex flex-col justify-between"
+                className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-card flex flex-col justify-between"
               >
                 <div>
                   <div className="flex items-center justify-between gap-2 mb-2">
-                    <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-teal-50 text-teal-800 border border-teal-200/60">
+                    <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-teal-50 text-teal-800 border border-teal-200/60">
                       {prog.degreeLevel} • {prog.subject}
                     </span>
-                    <span className="text-xs text-slate-500">
+                    <span className="text-xs text-slate-500 tabular-nums">
                       {prog.durationMonths} Months ({prog.creditsEcts} ECTS)
                     </span>
                   </div>
 
-                  <h3 className="text-lg font-bold text-brand-navy">{prog.name}</h3>
+                  <h3 className="text-lg font-heading font-semibold text-brand-navy">{prog.name}</h3>
 
                   <div className="mt-3 space-y-1 text-xs text-slate-600">
                     <p>
                       <strong className="text-slate-800">Prerequisites:</strong> {prog.prerequisites}
                     </p>
-                    <p>
+                    <p className="tabular-nums">
                       <strong className="text-slate-800">English Standard:</strong> IELTS {prog.ieltsOverall} (subscores {prog.ieltsSubscoreMin}) • TOEFL {prog.toeflOverall} • PTE {prog.pteOverall}
                     </p>
                     <p>
@@ -260,7 +260,7 @@ export const UniversityDetailsPage: React.FC = () => {
                 <div className="mt-5 pt-4 border-t border-slate-100 flex items-center justify-between">
                   <div>
                     <span className="text-[11px] text-slate-400 block">Annual Tuition</span>
-                    <span className="font-extrabold text-brand-navy text-sm">
+                    <span className="font-heading font-semibold text-brand-navy text-sm tabular-nums">
                       {prog.currencyCode} {prog.annualTuitionLocal.toLocaleString()}
                     </span>
                   </div>

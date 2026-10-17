@@ -44,6 +44,17 @@ model User {
   testPreferences      StudentTestPreference[]
   moiCorrections       MoiCorrectionReport[]
   visaCorrections      VisaCorrectionReport[]
+  eligibilityAssessments EligibilityAssessment[]
+  articleBookmarks     ArticleBookmark[]
+  editorialReviews     EditorialReview[]
+  contentCorrectionReports ContentCorrectionReport[]
+  cvDrafts             CVBuilderDraft[]
+
+  // Country Work Guide & Policy Relations
+  policyRevisions       PolicyRevision[]
+  policyCorrectionReports PolicyCorrectionReport[]
+  dataImportJobs        DataImportJob[]
+  policyVerifications   PolicyVerification[]
 }
 
 model Country {
@@ -81,6 +92,19 @@ model Country {
   applicantRules     ApplicantJurisdictionRule[]
   socialAccounts     OfficialSocialAccount[]
   socialUpdates      SocialUpdate[]
+
+  // Country Work Guide Relations
+  countryLanguages      CountryLanguage[]
+  minimumWagePolicies   MinimumWagePolicy[]
+  wageJurisdictions     WageJurisdiction[]
+  studentWorkPolicies   StudentWorkPolicy[]
+  postStudyWorkRoutes   PostStudyWorkRoute[]
+  careerSectors         CareerSector[]
+  careerRoadmaps        CareerRoadmap[]
+  officialSources       CountryOfficialSource[]
+  policyVerifications   PolicyVerification[]
+  policyRevisions       PolicyRevision[]
+  policyCorrectionReports PolicyCorrectionReport[]
 }
 
 model City {
@@ -149,6 +173,7 @@ model University {
   moiPolicies        MoiPolicy[]
   moiSources         MoiPolicySource[]
   moiExemptions      EnglishLanguageExemption[]
+  academicRequirements AcademicRequirement[]
 }
 
 model Campus {
@@ -220,6 +245,8 @@ model Program {
   deadlines          ApplicationDeadline[]
   testPolicies       UniversityTestPolicy[]
   moiPolicies        MoiPolicy[]
+  academicRequirements AcademicRequirement[]
+  eligibilityAssessments EligibilityAssessment[]
 }
 
 model ProgramRequirement {
@@ -1360,6 +1387,984 @@ model IngestionError {
   errorStack       String?
   timestamp        DateTime         @default(now())
 }
+
+// ============================================================================
+// GLOBAL ACADEMIC ELIGIBILITY & SUBJECT REQUIREMENTS ENGINE (SECTION 14)
+// ============================================================================
+
+model AcademicRequirement {
+  id                            String                        @id @default(uuid())
+  programId                     String?
+  program                       Program?                      @relation(fields: [programId], references: [id], onDelete: Cascade)
+  universityId                  String?
+  university                    University?                   @relation(fields: [universityId], references: [id], onDelete: Cascade)
+  degreeLevel                   String                        // BACHELOR, MASTER, PHD, FOUNDATION, DIPLOMA
+  targetQualification           String                        // e.g. "BSc in Computer Science", "MSc in Data Science", "PhD in Engineering"
+  countryCode                   String                        // "GB", "US", "CA", "AU", "DE", "IE", "FI", "SE", "LT", "PT", etc.
+  countryName                   String
+  
+  // Overall grading threshold
+  overallMinimumGpa             Float?
+  overallGradingScale           String?                       // "BD_GPA_5", "CGPA_4", "PERCENTAGE_100", "UK_HONOURS", "US_GPA_4"
+  gradingScaleId                String?
+  scale                         GradeScale?                   @relation(fields: [gradingScaleId], references: [id])
+
+  // Secondary Education (SSC / O-Level)
+  minSscGpa                     Float?
+  sscGpaScale                   Float?                        @default(5.0)
+  minHscGpa                     Float?
+  hscGpaScale                   Float?                        @default(5.0)
+  combinedSscHscGpa             Float?
+  hscStreamRequired             String?                       // "SCIENCE", "COMMERCE", "HUMANITIES", "ANY"
+  acceptedSecondaryBoards       String?                       // "Dhaka, Chittagong, Cambridge CIE, Edexcel, IB"
+  passingYearGapMax             Int?                          // e.g. 2 years
+
+  // Bachelor / Undergraduate
+  minBachelorCgpa               Float?
+  bachelorCgpaScale             Float?                        @default(4.0)
+  minBachelorPercentage         Float?
+  bachelorDegreeTitleRequired    String?                       // e.g. "4-year Bachelor in Computer Science, Software Engineering, EEE, Math, or Physics"
+  bachelorClassRequired         String?                       // "First Class", "Upper Second Class (2:1)", "Lower Second Class (2:2)"
+  directEntryAccepted           Boolean                       @default(true)
+  foundationEntryOption         String?
+
+  // Master / Postgraduate & PhD
+  minMasterCgpa                 Float?
+  masterCgpaScale               Float?                        @default(4.0)
+  researchProposalRequired      Boolean                       @default(false)
+  supervisorPreApprovalRequired Boolean                       @default(false)
+  publicationsRequired          Boolean                       @default(false)
+  workExperienceMonthsRequired  Int                           @default(0)
+  prerequisiteCoursework        String?
+  entranceExamRequired          String?                       // e.g. "GRE General (Quant 160+), GMAT (650+)"
+  interviewRequired             Boolean                       @default(false)
+
+  notes                         String?
+  officialSourceUrl             String
+  sourcePublisher               String
+  lastVerifiedAt                DateTime                      @default(now())
+  isVerified                    Boolean                       @default(true)
+  adminApprovalStatus           String                        @default("APPROVED") // APPROVED, PENDING, REJECTED
+
+  createdAt                     DateTime                      @default(now())
+  updatedAt                     DateTime                      @updatedAt
+
+  subjectRequirements           ProgramSubjectRequirement[]
+  equivalencies                 QualificationEquivalency[]
+  sources                       AcademicRequirementSource[]
+  revisions                     AcademicRequirementRevision[]
+  corrections                   AcademicCorrectionReport[]
+
+  @@index([countryCode, degreeLevel])
+}
+
+model ProgramSubjectRequirement {
+  id                            String              @id @default(uuid())
+  academicRequirementId         String
+  academicRequirement           AcademicRequirement @relation(fields: [academicRequirementId], references: [id], onDelete: Cascade)
+  subjectName                   String              // e.g. "Mathematics", "Physics", "Chemistry", "Biology", "English"
+  requirementType               String              @default("MANDATORY") // "MANDATORY", "PREFERRED", "ALTERNATIVE_OPTIONAL"
+  minimumGradeLetter            String?             // e.g. "A", "B", "A*", "4.00"
+  minimumGradeNumeric           Float?              // e.g. 3.5, 4.0
+  gradingScale                  String?             // e.g. "BD_GPA_5", "A_LEVEL", "PERCENTAGE"
+  academicStream                String?             // "SCIENCE", "COMMERCE", "HUMANITIES", "ANY"
+  requiresLaboratory            Boolean             @default(false)
+  acceptedEquivalentSubjects    String?             // e.g. "Higher Mathematics, Further Mathematics, Calculus"
+  alternativeCombinations       String?             // e.g. "Physics + Chemistry OR Physics + Computer Science"
+  notes                         String?
+  createdAt                     DateTime            @default(now())
+}
+
+model GradeScale {
+  id                            String                @id @default(uuid())
+  name                          String
+  code                          String                @unique
+  countryCode                   String?
+  maxScale                      Float?
+  passThreshold                 Float?
+  description                   String
+  officialScaleAuthority        String?
+  bands                         String?               // JSON string of thresholds
+  createdAt                     DateTime              @default(now())
+  updatedAt                     DateTime              @updatedAt
+
+  academicRequirements          AcademicRequirement[]
+}
+
+model QualificationEquivalency {
+  id                            String               @id @default(uuid())
+  academicRequirementId         String?
+  academicRequirement           AcademicRequirement? @relation(fields: [academicRequirementId], references: [id], onDelete: Cascade)
+  countryCode                   String               // Destination country
+  homeQualification             String               // e.g. "Bangladesh HSC (Higher Secondary Certificate)"
+  targetQualification           String               // e.g. "UK GCE A-Levels / Foundation"
+  minimumHomeResult             String               // e.g. "GPA 4.50/5.00 in Science"
+  standardEquivalency           String               // e.g. "Direct Year 1 entry for GPA 4.80+; Foundation Year required for GPA < 4.50"
+  isOfficialPolicy              Boolean              @default(true)
+  credentialEvaluator           String?              // e.g. "ECCTIS / UK ENIC", "WES Canada", "Anabin (KMK Germany)"
+  sourceUrl                     String
+  notes                         String?
+  createdAt                     DateTime             @default(now())
+  updatedAt                     DateTime             @updatedAt
+}
+
+model EligibilityAssessment {
+  id                            String    @id @default(uuid())
+  userId                        String?
+  user                          User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+  programId                     String?
+  program                       Program?  @relation(fields: [programId], references: [id], onDelete: SetNull)
+  universityName                String
+  programName                   String
+  degreeLevel                   String
+  studentInputJson              String    // JSON string of student results entered
+  status                        String    // "MEETS_THRESHOLDS", "DOES_NOT_MEET", "ADDITIONAL_INFO_REQUIRED", "PREREQUISITES_NOT_CONFIRMED", "EQUIVALENCY_CONFIRMATION_REQUIRED"
+  overallMatched                Boolean
+  summary                       String
+  matchDetailsJson              String    // JSON string of per-field match assessments
+  createdAt                     DateTime  @default(now())
+}
+
+model AcademicRequirementSource {
+  id                            String              @id @default(uuid())
+  academicRequirementId         String
+  academicRequirement           AcademicRequirement @relation(fields: [academicRequirementId], references: [id], onDelete: Cascade)
+  title                         String
+  publisher                     String
+  url                           String
+  retrievedAt                   DateTime            @default(now())
+  lastVerifiedAt                DateTime            @default(now())
+}
+
+model AcademicRequirementRevision {
+  id                            String              @id @default(uuid())
+  academicRequirementId         String
+  academicRequirement           AcademicRequirement @relation(fields: [academicRequirementId], references: [id], onDelete: Cascade)
+  changedBy                     String
+  fieldName                     String
+  previousValue                 String?
+  newValue                      String?
+  reason                        String
+  appliedAt                     DateTime            @default(now())
+}
+
+model AcademicCorrectionReport {
+  id                            String               @id @default(uuid())
+  academicRequirementId         String?
+  academicRequirement           AcademicRequirement? @relation(fields: [academicRequirementId], references: [id], onDelete: Cascade)
+  universityName                String
+  programName                   String
+  issueCategory                 String               // "INCORRECT_GPA", "MISSING_SUBJECT_PREREQUISITE", "OUTDATED_EQUIVALENCY", "BROKEN_LINK", "OTHER"
+  description                   String
+  evidenceUrl                   String?
+  reporterName                  String?
+  reporterEmail                 String?
+  status                        String               @default("PENDING") // PENDING, APPROVED, REJECTED
+  adminNotes                    String?
+  reviewedBy                    String?
+  reviewedAt                    DateTime?
+  createdAt                     DateTime             @default(now())
+}
+
+// ============================================================================
+// 15. PREMIUM RESEARCH, EDUCATION BLOG & SUPER ADMIN CONTENT PLATFORM
+// ============================================================================
+
+model ArticleCategory {
+  id                 String     @id @default(uuid())
+  name               String
+  slug               String     @unique
+  description        String?
+  iconName           String?    @default("BookOpen")
+  displayOrder       Int        @default(0)
+  articles           Article[]
+  createdAt          DateTime   @default(now())
+  updatedAt          DateTime   @updatedAt
+}
+
+model ArticleAuthor {
+  id                 String     @id @default(uuid())
+  name               String
+  slug               String     @unique
+  roleTitle          String
+  bio                String
+  avatarUrl          String?
+  affiliation        String?
+  credentials        String?
+  email              String?
+  verifiedExpert     Boolean    @default(true)
+  articles           Article[]
+  createdAt          DateTime   @default(now())
+}
+
+model Article {
+  id                         String                    @id @default(uuid())
+  title                      String
+  slug                       String                    @unique
+  summary                    String
+  content                    String                    // Structured long-form Markdown
+  tableOfContents            String?                   // JSON string array of headings
+  categoryId                 String
+  category                   ArticleCategory           @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  authorId                   String?
+  author                     ArticleAuthor?            @relation(fields: [authorId], references: [id], onDelete: SetNull)
+  contentType                String                    @default("GUIDE") // GUIDE, COMPARISON, RESEARCH_EXPLAINER, POLICY_BRIEF, ADMISSION_GUIDE, SCHOLARSHIP_GUIDE, TEST_PREP
+  primaryCountryCode         String?
+  targetInstitutionId        String?
+  degreeLevel                String?                   @default("ALL") // UNDERGRADUATE, POSTGRADUATE, DOCTORAL, ALL
+  fieldOfStudy               String?                   @default("GENERAL") // STEM, LIFE_SCIENCES, BUSINESS, HUMANITIES, LAW, GENERAL
+  readingTimeMinutes         Int                       @default(8)
+  wordCount                  Int                       @default(1500)
+  featuredImage              String?
+  status                     String                    @default("PUBLISHED") // DRAFT, EDITORIAL_REVIEW, FACT_CHECK, APPROVED, PUBLISHED, ARCHIVED
+  isFeatured                 Boolean                   @default(false)
+  isEditorPick               Boolean                   @default(false)
+  viewCount                  Int                       @default(0)
+  bookmarkCount              Int                       @default(0)
+  publishedAt                DateTime?                 @default(now())
+  lastReviewedAt             DateTime                  @default(now())
+  verifiedDate               DateTime                  @default(now())
+  verifiedBy                 String?                   @default("Borno Editorial Board")
+  sourceVerificationStatus   String                    @default("VERIFIED") // VERIFIED, NEEDS_UPDATE, CONFIRMED_OFFICIAL, CONFLICTING_SOURCES
+  limitations                String?
+  faqJson                    String?                   // JSON string array of FAQs
+  keyTakeawaysJson           String?                   // JSON string array of bullet points
+  citationsJson              String?                   // JSON string array of citations
+  relatedArticleIds          String?                   // JSON string array
+  researchPaperId            String?
+  researchPaper              ResearchPaper?            @relation(fields: [researchPaperId], references: [id], onDelete: SetNull)
+  createdAt                  DateTime                  @default(now())
+  updatedAt                  DateTime                  @updatedAt
+
+  sources                    ArticleSource[]
+  revisions                  ArticleRevision[]
+  reviews                    EditorialReview[]
+  correctionReports          ContentCorrectionReport[]
+  bookmarks                  ArticleBookmark[]
+  universityComparisons      UniversityComparison[]
+  countryComparisons         CountryComparison[]
+
+  @@index([categoryId, status])
+  @@index([contentType])
+}
+
+model ArticleSource {
+  id                 String     @id @default(uuid())
+  articleId          String
+  article            Article    @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  title              String
+  publisher          String
+  url                String
+  sourceType         String     @default("OFFICIAL_UNIVERSITY") // OFFICIAL_UNIVERSITY, GOVERNMENT_IMMIGRATION, CREDENTIAL_EVALUATOR, PEER_REVIEWED_JOURNAL, TEST_AGENCY
+  accessDate         DateTime   @default(now())
+  verificationStatus String     @default("VERIFIED") // VERIFIED, STALE, BROKEN, UNCONFIRMED
+  notes              String?
+  createdAt          DateTime   @default(now())
+}
+
+model ArticleRevision {
+  id                 String     @id @default(uuid())
+  articleId          String
+  article            Article    @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  authorAdminId      String
+  authorName         String
+  changeSummary      String
+  previousContent    String?
+  newContent         String?
+  createdAt          DateTime   @default(now())
+}
+
+model ResearchPaper {
+  id                         String                @id @default(uuid())
+  title                      String
+  slug                       String                @unique
+  doi                        String?
+  publicationYear            Int
+  journalOrConference        String
+  publisher                  String
+  officialUrl                String
+  accessStatus               String                @default("OPEN_ACCESS") // OPEN_ACCESS, ABSTRACT_ONLY, RESTRICTED, UNKNOWN
+  researchDiscipline         String                @default("HIGHER_EDUCATION") // HIGHER_EDUCATION, STEM_PEDAGOGY, STUDENT_MOBILITY, IMMIGRATION_ECONOMICS, MACHINE_LEARNING_EDUCATION, LANGUAGE_ACQUISITION
+  researchQuestion           String
+  methodologySummary         String
+  keyFindingsSummary         String
+  limitationsNotes           String
+  sampleSize                 String?
+  independentExplainerText   String
+  verifiedCitationsCount     Int                   @default(0)
+  isVerified                 Boolean               @default(true)
+  lastReviewedAt             DateTime              @default(now())
+  createdAt                  DateTime              @default(now())
+
+  articles                   Article[]
+  authors                    ResearchPaperAuthor[]
+}
+
+model ResearchPaperAuthor {
+  id                 String        @id @default(uuid())
+  paperId            String
+  paper              ResearchPaper @relation(fields: [paperId], references: [id], onDelete: Cascade)
+  name               String
+  affiliation        String?
+  orderIndex         Int           @default(0)
+}
+
+model UniversityComparison {
+  id                     String               @id @default(uuid())
+  title                  String
+  slug                   String               @unique
+  articleId              String?
+  article                Article?             @relation(fields: [articleId], references: [id], onDelete: SetNull)
+  comparisonScope        String               // TUITION, ADMISSION_REQUIREMENTS, RESEARCH_FACILITIES, STEM_PROGRAMS, CS_VS_SE, POSTGRAD_FUNDING
+  summaryNotes           String
+  methodologyDisclosure  String
+  lastVerifiedAt         DateTime             @default(now())
+  createdAt              DateTime             @default(now())
+
+  dataPoints             ComparisonDataPoint[]
+}
+
+model CountryComparison {
+  id                     String               @id @default(uuid())
+  title                  String
+  slug                   String               @unique
+  articleId              String?
+  article                Article?             @relation(fields: [articleId], references: [id], onDelete: SetNull)
+  comparisonScope        String               // LIVING_COSTS, TUITION_FEES, VISA_POLICIES, ADMISSION_SYSTEMS, INTAKES_DEADLINES
+  summaryNotes           String
+  methodologyDisclosure  String
+  lastVerifiedAt         DateTime             @default(now())
+  createdAt              DateTime             @default(now())
+
+  dataPoints             ComparisonDataPoint[]
+}
+
+model ComparisonDataPoint {
+  id                         String                @id @default(uuid())
+  universityComparisonId     String?
+  universityComparison       UniversityComparison? @relation(fields: [universityComparisonId], references: [id], onDelete: Cascade)
+  countryComparisonId        String?
+  countryComparison          CountryComparison?    @relation(fields: [countryComparisonId], references: [id], onDelete: Cascade)
+  entityIdentifier           String                // e.g. "Oxford", "Cambridge", "United Kingdom", "Germany"
+  attributeKey               String                // e.g. "Average Tuition (STEM)", "Post-Study Work Visa (Years)", "Minimum IELTS"
+  attributeValue             String
+  numericValue               Float?
+  dataSourceUrl              String?
+  dataCollectionDate         DateTime              @default(now())
+  isEstimated                Boolean               @default(false)
+  notes                      String?
+}
+
+model EditorialReview {
+  id                 String     @id @default(uuid())
+  articleId          String
+  article            Article    @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  reviewerAdminId    String
+  reviewer           User       @relation(fields: [reviewerAdminId], references: [id], onDelete: Cascade)
+  reviewStage        String     // EDITORIAL_INITIAL, FACT_CHECK, SENIOR_APPROVAL
+  decision           String     // APPROVED, REVISIONS_REQUESTED, REJECTED
+  feedbackNotes      String
+  createdAt          DateTime   @default(now())
+}
+
+model ContentCorrectionReport {
+  id                         String     @id @default(uuid())
+  articleId                  String?
+  article                    Article?   @relation(fields: [articleId], references: [id], onDelete: SetNull)
+  userId                     String?
+  user                       User?      @relation(fields: [userId], references: [id], onDelete: SetNull)
+  articleTitle               String
+  articleUrl                 String
+  correctionCategory         String     // FACTUAL_ERROR, OUTDATED_FEE, BROKEN_SOURCE, MISLEADING_REQUIREMENT, OTHER
+  claimedErrorText           String
+  suggestedCorrection        String
+  officialEvidenceUrl        String
+  reporterName               String?
+  reporterEmail              String?
+  status                     String     @default("PENDING") // PENDING, INVESTIGATING, APPLIED, REJECTED
+  adminResolutionNotes       String?
+  resolvedBy                 String?
+  resolvedAt                 DateTime?
+  createdAt                  DateTime   @default(now())
+}
+
+model ContentGenerationJob {
+  id                         String     @id @default(uuid())
+  topic                      String
+  intendedAudience           String     // BANGLADESH_APPLICANTS, POSTGRAD_RESEARCHERS, UNDERGRAD_ENGINEERING, SCHOLARSHIP_SEEKERS
+  retrievedEvidenceJson      String?    // JSON array of cited evidence
+  generatedOutlineJson       String?
+  generatedDraftContent      String?
+  unsupportedClaimsJson      String?    // Flags claims with insufficient evidence
+  status                     String     @default("COMPLETED") // QUEUED, RESEARCHING, OUTLINING, DRAFTING, COMPLETED, FAILED
+  providerModelName          String     @default("Borno-Research-Agent-v2.6")
+  articleDraftId             String?
+  errorMessage               String?
+  createdAt                  DateTime   @default(now())
+}
+
+model ContentSourceVerification {
+  id                 String     @id @default(uuid())
+  sourceUrl          String     @unique
+  publisherName      String
+  lastCheckedAt      DateTime   @default(now())
+  httpStatusCode     Int        @default(200)
+  isAlive            Boolean    @default(true)
+  isConflictFlagged  Boolean    @default(false)
+  conflictReason     String?
+  updatedAt          DateTime   @updatedAt
+}
+
+model ArticleBookmark {
+  id                 String     @id @default(uuid())
+  articleId          String
+  article            Article    @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  userId             String
+  user               User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt          DateTime   @default(now())
+
+  @@unique([articleId, userId])
+}
+
+// ============================================================================
+// 16. LINK HEALTH, AUDIT & AUTOMATED REPAIR SYSTEM
+// ============================================================================
+
+model LinkAuditRecord {
+  id                    String    @id @default(uuid())
+  originalUrl           String
+  normalizedUrl         String
+  finalUrl              String?
+  destinationType       String    // "INTERNAL", "EXTERNAL"
+  category              String    // "UNIVERSITY", "ADMISSIONS", "SCHOLARSHIP", "VISA", "RESEARCH_DOI", "ACADEMIC", "NAVIGATION", "CITATION", "PORTAL"
+  sourceLocation        String    // e.g. "Database: University.websiteUrl", "client/src/components/layout/Navbar.tsx"
+  pageContext           String?   // e.g. "/universities", "/scholarships"
+  entityType            String?   // e.g. "University", "Scholarship", "Country", "Article"
+  entityId              String?   // Database record ID
+  entityName            String?   // Human-readable title or institution name
+  fieldName             String?   // Specific field: "websiteUrl", "officialApplicationUrl", etc.
+  httpStatus            Int?
+  status                String    @default("WORKING") // "WORKING", "WORKING_REDIRECT", "BROKEN", "INCORRECT_DESTINATION", "REDIRECT_LOOP", "TIMEOUT", "ACCESS_RESTRICTED", "REQUIRES_BROWSER_VERIFICATION", "REQUIRES_MANUAL_REVIEW"
+  redirectDestination   String?
+  suggestedReplacement  String?
+  repairStatus          String    @default("NONE") // "NONE", "PROPOSED", "APPROVED", "REPAIRED", "REJECTED", "MANUAL_REVIEW"
+  repairedUrl           String?
+  repairReason          String?
+  repairAppliedAt       DateTime?
+  lastCheckedAt         DateTime  @default(now())
+  errorMessage          String?
+  responseTimeMs        Int?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@index([category, status])
+  @@index([repairStatus])
+  @@index([destinationType])
+}
+
+model LinkAuditScanHistory {
+  id                    String    @id @default(uuid())
+  scanTrigger           String    // "AUTOMATED_SCHEDULE", "MANUAL_SUPER_ADMIN", "INITIAL_AUDIT"
+  totalLinks            Int
+  workingCount          Int
+  redirectCount         Int
+  brokenCount           Int
+  reviewCount           Int
+  repairedCount         Int
+  durationSeconds       Float
+  notes                 String?
+  createdAt             DateTime  @default(now())
+}
+
+// ============================================================================
+// 17. CAREER TOOLKIT, CV WRITING, EUROPASS & CAREER RESEARCH SYSTEM
+// ============================================================================
+
+model CVResearchRecord {
+  id                      String    @id @default(uuid())
+  sourceInstitution       String
+  sourceUrl               String
+  title                   String
+  cvType                  String    // "ACADEMIC_CV", "STUDENT_RESUME", "RESEARCH_CV", "EUROPASS_CV", "SCHOLARSHIP_CV", "GRADUATE_CV"
+  intendedAudience        String
+  field                   String
+  careerStage             String
+  sectionStructure        String    // JSON or structured text
+  formattingObservations  String
+  usefulPractices         String
+  potentialLimitations    String
+  dateAccessed            String
+  verificationStatus      String    @default("VERIFIED") // "VERIFIED", "FLAGGED", "ARCHIVED"
+  verifiedBy              String?
+  notes                   String?
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
+
+  @@index([cvType, field])
+  @@index([verificationStatus])
+}
+
+model CVExample {
+  id                String    @id @default(uuid())
+  slug              String    @unique
+  title             String
+  titleBn           String?
+  targetAudience    String
+  field             String
+  careerStage       String
+  isIllustrative    Boolean   @default(true)
+  rationaleEn       String
+  rationaleBn       String?
+  sectionBreakdown  String    // JSON
+  fullContent       String    // JSON
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  @@index([field, careerStage])
+}
+
+model CareerGuide {
+  id            String    @id @default(uuid())
+  slug          String    @unique
+  category      String    // "EUROPASS", "ACADEMIC", "RESEARCH", "SCHOLARSHIP", "STUDENT", "COVER_LETTER", "PERSONAL_STATEMENT", "CV_WRITING_GUIDE"
+  titleEn       String
+  titleBn       String
+  summaryEn     String
+  summaryBn     String
+  contentEn     String    // Markdown or HTML
+  contentBn     String
+  author        String    @default("Borno Career Advisory Board")
+  lastReviewed  DateTime  @default(now())
+  published     Boolean   @default(true)
+  views         Int       @default(0)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([category, published])
+}
+
+model CVBuilderDraft {
+  id              String    @id @default(uuid())
+  userId          String?
+  user            User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title           String    @default("Untitled CV Draft")
+  template        String    @default("academic-editorial") // "academic-editorial", "europass-standard", "modern-minimal", "tech-compact"
+  personalInfo    String    // JSON: name, email, phone, location, linkedin, github, website, etc.
+  education       String    // JSON array
+  experience      String    // JSON array
+  research        String?   // JSON array
+  projects        String?   // JSON array
+  skills          String?   // JSON array/object
+  publications    String?   // JSON array
+  awards          String?   // JSON array
+  volunteering    String?   // JSON array
+  certifications  String?   // JSON array
+  languages       String?   // JSON array
+  references      String?   // JSON array
+  customSections  String?   // JSON array
+  sectionOrder    String?   // JSON array of keys
+  isPrivate       Boolean   @default(true)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([userId])
+}
+
+model CVReviewLog {
+  id                String    @id @default(uuid())
+  userId            String?
+  targetOpportunity String?   // "MASTERS_ADMISSION", "PHD_ADMISSION", "SCHOLARSHIP", "TECH_INTERNSHIP", "RESEARCH_ASSISTANTSHIP", "GENERAL"
+  score             Int
+  findings          String    // JSON
+  createdAt         DateTime  @default(now())
+
+  @@index([userId])
+}
+
+model UserChecklistProgress {
+  id              String    @id @default(uuid())
+  userId          String?
+  sessionKey      String?
+  completedItems  String    // JSON array of item IDs
+  updatedAt       DateTime  @updatedAt
+  createdAt       DateTime  @default(now())
+
+  @@index([userId])
+  @@index([sessionKey])
+}
+
+// ==========================================
+// COUNTRY WORK & CAREER GUIDE SUBSYSTEM
+// ==========================================
+
+model CountryLanguage {
+  id               String          @id @default(uuid())
+  countryId        String
+  country          Country         @relation(fields: [countryId], references: [id], onDelete: Cascade)
+  languageName     String
+  languageCode     String          // ISO 639-1 (e.g. "de", "en", "sv")
+  isOfficial       Boolean         @default(false)
+  isNational       Boolean         @default(false)
+  isRegional       Boolean         @default(false)
+  isWidelySpoken   Boolean         @default(false)
+  higherEdUsage    String          // Description of higher education usage
+  jobMarketUsage   String          // Description of local employment market requirement
+  notes            String?
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+
+  usages           LanguageUsage[]
+
+  @@unique([countryId, languageCode])
+  @@index([countryId])
+}
+
+model LanguageUsage {
+  id                 String          @id @default(uuid())
+  countryLanguageId  String
+  countryLanguage    CountryLanguage @relation(fields: [countryLanguageId], references: [id], onDelete: Cascade)
+  contextType        String          // "HIGHER_EDUCATION", "JOB_MARKET", "GOVERNMENT_ADMIN", "DAILY_LIFE"
+  proficiencyRequired String?        // "B1", "B2", "C1", "Fluent", "Conversational"
+  description        String
+  exceptions         String?
+
+  @@index([countryLanguageId])
+}
+
+model MinimumWagePolicy {
+  id                      String              @id @default(uuid())
+  countryId               String
+  country                 Country             @relation(fields: [countryId], references: [id], onDelete: Cascade)
+  policyType              String              // "STATUTORY_NATIONAL", "REGIONAL_PROVINCIAL", "SECTORAL_COLLECTIVE_BARGAINING", "NO_STATUTORY_MINIMUM", "NOT_VERIFIED"
+  hasStatutoryMinimum     Boolean             @default(true)
+  governingBody           String?             // e.g. "Mindestlohnkommission", "Low Pay Commission", "Fair Work Commission"
+  legislationName         String?             // Statutory Act or decree
+  overview                String
+  collectiveBargainingNote String?            // Details regarding CBA coverage (e.g. Nordic model, Italy)
+  lastVerifiedAt          DateTime            @default(now())
+  verificationStatus      String              @default("VERIFIED") // "VERIFIED", "PENDING_REVIEW", "OUTDATED", "CONFLICTING", "UNAVAILABLE"
+  sourceUrl               String?
+  createdAt               DateTime            @default(now())
+  updatedAt               DateTime            @updatedAt
+
+  rates                   MinimumWageRate[]
+
+  @@index([countryId])
+}
+
+model WageJurisdiction {
+  id               String            @id @default(uuid())
+  countryId        String
+  country          Country           @relation(fields: [countryId], references: [id], onDelete: Cascade)
+  name             String            // e.g. "Ontario", "California", "Berlin", "Federal"
+  jurisdictionType String            // "FEDERAL", "STATE_PROVINCE", "CITY_MUNICIPAL", "SECTOR"
+  description      String?
+
+  rates            MinimumWageRate[]
+
+  @@unique([countryId, name])
+  @@index([countryId])
+}
+
+model MinimumWageRate {
+  id                    String             @id @default(uuid())
+  policyId              String
+  policy                MinimumWagePolicy  @relation(fields: [policyId], references: [id], onDelete: Cascade)
+  jurisdictionId        String?
+  jurisdiction          WageJurisdiction?  @relation(fields: [jurisdictionId], references: [id], onDelete: SetNull)
+  rateUnit              String             // "HOURLY", "DAILY", "WEEKLY", "MONTHLY", "ANNUAL"
+  amount                Float
+  currencyCode          String
+  currencySymbol        String
+  effectiveDate         DateTime
+  endDate               DateTime?
+  isCurrent             Boolean            @default(true)
+  rateType              String             @default("STATUTORY") // "STATUTORY", "ESTIMATE", "SUB_MINIMUM", "APPRENTICE"
+  ageCategory           String?            // "21+", "18-20", "Under 18", "All ages"
+  apprenticeException   String?
+  industryExceptions    String?
+  estimatedBdtHourly    Float?
+  bdtExchangeRateUsed   Float?
+  exchangeRateProvider  String?
+  rateNotes             String?
+  officialSourceUrl     String?
+  verificationStatus    String             @default("VERIFIED")
+  createdAt             DateTime           @default(now())
+  updatedAt             DateTime           @updatedAt
+
+  @@index([policyId])
+  @@index([jurisdictionId])
+}
+
+model StudentWorkPolicy {
+  id                         String                    @id @default(uuid())
+  countryId                  String
+  country                    Country                   @relation(fields: [countryId], references: [id], onDelete: Cascade)
+  eligibilityStatus          String                    // "PERMITTED_UNDER_CONDITIONS", "PERMIT_REQUIRED", "RESTRICTED_EMPLOYMENT", "NOT_PERMITTED", "UNKNOWN"
+  termTimeLimitHours         Float?
+  termTimeUnit               String                    // "HOURS_PER_WEEK", "HOURS_PER_FORTNIGHT", "DAYS_PER_YEAR", "HALF_DAYS_PER_YEAR", "HOURS_PER_MONTH", "NO_STATUTORY_LIMIT"
+  termTimeRuleText           String                    // Official legal rule text, e.g. "48 hours per fortnight", "140 full days or 280 half days per calendar year"
+  holidayLimitHours          Float?
+  holidayTimeUnit            String                    // "UNRESTRICTED", "FULL_TIME", "HOURS_PER_WEEK", "SAME_AS_TERM"
+  holidayRuleText            String
+  onCampusRules              String
+  offCampusRules             String
+  selfEmploymentAllowed      Boolean                   @default(false)
+  selfEmploymentRules        String?
+  internshipRules            String?
+  assistantshipRules         String?
+  canWorkBeforeCourseStarts  Boolean                   @default(false)
+  postCompletionRules        String?
+  visaConditionPrecedenceNote String?
+  sourceUrl                  String?
+  verificationStatus         String                    @default("VERIFIED")
+  lastVerifiedAt             DateTime                  @default(now())
+  createdAt                  DateTime                  @default(now())
+  updatedAt                  DateTime                  @updatedAt
+
+  exceptions                 StudentWorkException[]
+  authorizations             StudentWorkAuthorization[]
+
+  @@index([countryId])
+}
+
+model StudentWorkException {
+  id           String            @id @default(uuid())
+  policyId     String
+  policy       StudentWorkPolicy @relation(fields: [policyId], references: [id], onDelete: Cascade)
+  category     String            // "LANGUAGE_STUDENTS", "PREPARATORY_STUDENTS", "PHD_RESEARCHERS", "MINORS", "SCHOLARSHIP_HOLDERS"
+  description  String
+  allowedHours Float?
+  timeUnit     String?
+
+  @@index([policyId])
+}
+
+model StudentWorkAuthorization {
+  id                   String            @id @default(uuid())
+  policyId             String
+  policy               StudentWorkPolicy @relation(fields: [policyId], references: [id], onDelete: Cascade)
+  authorizationType    String            // "AUTOMATIC_WITH_VISA", "SEPARATE_WORK_PERMIT", "TAX_ID_REGISTRATION", "SOCIAL_SECURITY_REGISTRATION", "CANTONAL_AUTHORIZATION"
+  authorityName        String
+  procedureDescription String
+  processingTimeDays   Int?
+  officialFormUrl      String?
+
+  @@index([policyId])
+}
+
+model PostStudyWorkRoute {
+  id                              String                   @id @default(uuid())
+  countryId                       String
+  country                         Country                  @relation(fields: [countryId], references: [id], onDelete: Cascade)
+  routeName                       String                   // e.g. "Graduate Route", "Post-Graduation Work Permit (PGWP)", "Jobseeker Permit for Graduates (§20 AufenthG)"
+  routeCode                       String?                  // e.g. "PGWP", "UK-GRADUATE", "AU-485", "DE-20"
+  durationMonthsMin               Int
+  durationMonthsMax               Int
+  durationNotes                   String
+  jobOfferRequired                Boolean                  @default(false)
+  employerSponsorshipRequired     Boolean                  @default(false)
+  occupationRestrictions          Boolean                  @default(false)
+  selfEmploymentAllowed           Boolean                  @default(true)
+  isExtensionPossible             Boolean                  @default(false)
+  leadsToPermanentResidence       Boolean                  @default(true)
+  prPathwayDetails                String?
+  applicationDeadlineDays         Int?
+  applicationDeadlineDescription  String
+  applicationFeeAmount            Float?
+  applicationFeeCurrency          String?
+  governmentApplicationUrl        String
+  verificationStatus              String                   @default("VERIFIED")
+  lastVerifiedAt                  DateTime                 @default(now())
+  policyChangeNotice              String?
+  createdAt                       DateTime                 @default(now())
+  updatedAt                       DateTime                 @updatedAt
+
+  eligibilityRules                GraduateEligibilityRule[]
+
+  @@index([countryId])
+}
+
+model GraduateEligibilityRule {
+  id                        String             @id @default(uuid())
+  routeId                   String
+  route                     PostStudyWorkRoute @relation(fields: [routeId], references: [id], onDelete: Cascade)
+  qualificationLevel        String             // "BACHELORS", "MASTERS", "DOCTORATE", "POSTGRAD_DIPLOMA", "VOCATIONAL"
+  institutionCriteria       String
+  studyDurationRequirement  String
+  languageRequirement       String?
+  financialProofRequired    Boolean            @default(false)
+  description               String
+
+  @@index([routeId])
+}
+
+model CareerSector {
+  id                   String              @id @default(uuid())
+  countryId            String
+  country              Country             @relation(fields: [countryId], references: [id], onDelete: Cascade)
+  name                 String
+  slug                 String
+  overview             String
+  demandStatus         String              // "HIGH_SHORTAGE", "GROWING_DEMAND", "MODERATE", "SATURATED", "REGULATED_RESTRICTED"
+  shortageListOfficial Boolean             @default(false)
+  shortageSourceDate   DateTime?
+  averageSalaryMin     Float?
+  averageSalaryMax     Float?
+  salaryCurrency       String?
+  officialPortalName   String?
+  officialPortalUrl    String?
+  createdAt            DateTime            @default(now())
+  updatedAt            DateTime            @updatedAt
+
+  occupations          OccupationProfile[]
+
+  @@unique([countryId, slug])
+  @@index([countryId])
+}
+
+model OccupationProfile {
+  id                    String        @id @default(uuid())
+  sectorId              String
+  sector                CareerSector  @relation(fields: [sectorId], references: [id], onDelete: Cascade)
+  title                 String
+  code                  String?       // SOC or ANZSCO code
+  isRegulated           Boolean       @default(false)
+  regulatorBody         String?
+  licensingRequirements String?
+  entryQualification    String
+  languageProficiency   String
+  typicalStartingSalary Float?
+  salarySource          String?
+  jobOutlook            String        // "VERY_STRONG", "STRONG", "MODERATE", "STABLE"
+  exampleEmployers      String?       // JSON string
+
+  @@index([sectorId])
+}
+
+model CareerRoadmap {
+  id              String              @id @default(uuid())
+  countryId       String
+  country         Country             @relation(fields: [countryId], references: [id], onDelete: Cascade)
+  title           String
+  targetAudience  String              @default("INTERNATIONAL_STUDENTS")
+  summary         String
+  disclaimer      String              @default("This roadmap is a planning framework based on verified official regulations and labour market trends. It is not legal or immigration advice and does not guarantee employment.")
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+
+  steps           CareerRoadmapStep[]
+
+  @@index([countryId])
+}
+
+model CareerRoadmapStep {
+  id                  String        @id @default(uuid())
+  roadmapId           String
+  roadmap             CareerRoadmap @relation(fields: [roadmapId], references: [id], onDelete: Cascade)
+  stageCode           String        // "STAGE_A", "STAGE_B", "STAGE_C", "STAGE_D", "STAGE_E", "STAGE_F"
+  stageTitle          String
+  timelineDescription String
+  stepOrder           Int
+  actionItems         String        // JSON array of strings
+  criticalRules       String?       // JSON array or text of legal cautions
+  keyResources        String?       // JSON array of links/portals
+
+  @@unique([roadmapId, stageCode])
+  @@index([roadmapId])
+}
+
+model CountryOfficialSource {
+  id                  String    @id @default(uuid())
+  countryId           String
+  country             Country   @relation(fields: [countryId], references: [id], onDelete: Cascade)
+  authorityName       String    // e.g. "Immigration, Refugees and Citizenship Canada (IRCC)"
+  category            String    // "IMMIGRATION", "LABOUR_MINISTRY", "MINIMUM_WAGE", "PUBLIC_EMPLOYMENT", "STATISTICS", "EDUCATION_AUTHORITY"
+  sourceTitle         String
+  sourceUrl           String
+  retrievalDate       DateTime  @default(now())
+  policyEffectiveDate DateTime?
+  verifiedBy          String?
+  status              String    @default("ACTIVE_VERIFIED") // "ACTIVE_VERIFIED", "FLAGGED_CHANGE", "DEPRECATED"
+  notes               String?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  @@index([countryId])
+}
+
+model PolicyVerification {
+  id                  String    @id @default(uuid())
+  countryId           String
+  country             Country   @relation(fields: [countryId], references: [id], onDelete: Cascade)
+  entityType          String    // "MINIMUM_WAGE", "STUDENT_WORK", "POST_STUDY_WORK", "LANGUAGE", "CAREER"
+  entityId            String?
+  verifiedByUserId    String?
+  verifiedByUser      User?     @relation(fields: [verifiedByUserId], references: [id], onDelete: SetNull)
+  verificationStatus  String    // "VERIFIED", "PENDING_REVIEW", "OUTDATED", "CONFLICTING", "UNAVAILABLE"
+  sourceUrl           String
+  findings            String
+  nextScheduledCheck  DateTime?
+  createdAt           DateTime  @default(now())
+
+  @@index([countryId])
+  @@index([verifiedByUserId])
+}
+
+model PolicyRevision {
+  id               String    @id @default(uuid())
+  countryId        String
+  country          Country   @relation(fields: [countryId], references: [id], onDelete: Cascade)
+  entityType       String
+  entityId         String
+  previousValue    String    // JSON
+  newValue         String    // JSON
+  changeReason     String
+  changedByUserId  String?
+  changedByUser    User?     @relation(fields: [changedByUserId], references: [id], onDelete: SetNull)
+  effectiveDate    DateTime
+  createdAt        DateTime  @default(now())
+
+  @@index([countryId])
+  @@index([changedByUserId])
+}
+
+model PolicyCorrectionReport {
+  id                 String    @id @default(uuid())
+  countryId          String
+  country            Country   @relation(fields: [countryId], references: [id], onDelete: Cascade)
+  userId             String?
+  user               User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+  entityType         String
+  reportedIssue      String
+  proposedCorrection String
+  evidenceUrl        String?
+  status             String    @default("PENDING") // "PENDING", "ACCEPTED", "REJECTED", "INVESTIGATING"
+  adminNotes         String?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  @@index([countryId])
+  @@index([userId])
+}
+
+model DataImportJob {
+  id           String    @id @default(uuid())
+  userId       String?
+  user         User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+  datasetName  String
+  recordCount  Int       @default(0)
+  successCount Int       @default(0)
+  errorCount   Int       @default(0)
+  status       String    @default("COMPLETED") // "PENDING", "PROCESSING", "COMPLETED", "FAILED"
+  logSummary   String    // JSON or text
+  createdAt    DateTime  @default(now())
+
+  @@index([userId])
+}
+
+
+
 
 
 

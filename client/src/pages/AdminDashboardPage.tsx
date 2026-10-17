@@ -24,6 +24,7 @@ import {
   Calendar,
   Globe,
   Award,
+  Compass,
 } from 'lucide-react';
 import { SeoHead } from '../components/common/SeoHead.js';
 import { AdminReportsManager } from '../components/admin/AdminReportsManager.js';
@@ -31,10 +32,21 @@ import { AdminDeadlinesManager } from '../components/admin/AdminDeadlinesManager
 import { AdminCountryCoverageManager } from '../components/admin/AdminCountryCoverageManager.js';
 import { AdminEnglishTestsManager } from '../components/admin/AdminEnglishTestsManager.js';
 import { AdminMoiManager } from '../components/admin/AdminMoiManager.js';
+import { AdminVisaIntelligenceManager } from '../components/admin/AdminVisaIntelligenceManager.js';
+import { AdminAcademicEligibilityManager } from '../components/admin/AdminAcademicEligibilityManager.js';
+import { AdminContentStudio } from '../components/admin/AdminContentStudio.js';
+import { AdminLinkHealthManager } from '../components/admin/AdminLinkHealthManager.js';
+import { AdminCareerToolkitManager } from '../components/admin/AdminCareerToolkitManager.js';
+import { AdminCountryWorkGuideManager } from '../components/admin/AdminCountryWorkGuideManager.js';
+import { GraduationCap, Sparkles, Link2, Briefcase } from 'lucide-react';
+import { useSearchParams } from 'react-router-dom';
+import { PageIntro, StaggerGroup } from '../components/motion/index.js';
 
 export const AdminDashboardPage: React.FC = () => {
   const { user, token, isAdmin } = useAuth();
-  const [activeTab, setActiveTab] = useState<'overview' | 'coverage' | 'english-tests' | 'moi' | 'reports' | 'deadlines' | 'contributors' | 'posts' | 'documents'>('overview');
+  const [searchParams] = useSearchParams();
+  const defaultTab = (searchParams.get('tab') as any) || 'overview';
+  const [activeTab, setActiveTab] = useState<'overview' | 'content' | 'link-health' | 'work-guide' | 'career-toolkit' | 'academic' | 'coverage' | 'visa' | 'english-tests' | 'moi' | 'reports' | 'deadlines' | 'contributors' | 'posts' | 'documents'>(defaultTab);
   const [stats, setStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
@@ -213,16 +225,16 @@ export const AdminDashboardPage: React.FC = () => {
       />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <PageIntro className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-teal-50 text-teal-800 text-xs font-bold border border-teal-200">
-              <ShieldCheck className="w-4 h-4 text-teal-600" />
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-teal-50 dark:bg-teal-950/40 text-teal-800 dark:text-teal-300 text-xs font-semibold border border-teal-200 dark:border-teal-800/50">
+              <ShieldCheck className="w-4 h-4 text-teal-600 dark:text-teal-400" />
               <span>Administrative Control Center • Role: {user?.role || 'SUPER_ADMIN'}</span>
             </div>
-            <h1 className="text-2xl sm:text-3xl font-black text-slate-900 mt-1">
+            <h1 className="text-2xl sm:text-3xl font-heading font-semibold text-brand-navy dark:text-white tracking-tight mt-1">
               Data, Contributor & Document Review Portal
             </h1>
-            <p className="text-xs sm:text-sm text-slate-500 mt-1">
+            <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
               Multi-role administration: ingest official sources, approve student contributors, moderate guides, and complete internal financial document checks.
             </p>
           </div>
@@ -230,13 +242,13 @@ export const AdminDashboardPage: React.FC = () => {
           <div className="flex items-center gap-2">
             <Link
               to="/admin/verification"
-              className="px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold shadow-xs transition-colors inline-flex items-center gap-1.5"
+              className="px-4 py-2 rounded-xl bg-brand-navy dark:bg-teal-700 hover:bg-slate-800 dark:hover:bg-teal-600 text-white text-xs font-semibold shadow-2xs transition-colors inline-flex items-center gap-1.5"
             >
               <FileSpreadsheet className="w-4 h-4" />
               <span>CSV & Ingestion Pipeline</span>
             </Link>
           </div>
-        </div>
+        </PageIntro>
 
         {/* Global Action Message */}
         {actionMessage && (
@@ -268,6 +280,66 @@ export const AdminDashboardPage: React.FC = () => {
           </button>
           <button
             type="button"
+            onClick={() => setActiveTab('content')}
+            className={`px-4 py-2.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all flex items-center gap-2 ${
+              activeTab === 'content'
+                ? 'bg-slate-900 text-white shadow-xs'
+                : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
+            }`}
+          >
+            <Sparkles className="w-4 h-4 text-teal-400" />
+            Editorial Content Studio (100+ Guides)
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('link-health')}
+            className={`px-4 py-2.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all flex items-center gap-2 ${
+              activeTab === 'link-health'
+                ? 'bg-slate-900 text-white shadow-xs'
+                : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
+            }`}
+          >
+            <Link2 className="w-4 h-4 text-teal-400" />
+            Link Health &amp; Repairs
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('career-toolkit')}
+            className={`px-4 py-2.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all flex items-center gap-2 ${
+              activeTab === 'career-toolkit'
+                ? 'bg-slate-900 text-white shadow-xs'
+                : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
+            }`}
+          >
+            <Briefcase className="w-4 h-4 text-teal-400" />
+            Career Toolkit &amp; CV Research (52 Records)
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('work-guide')}
+            className={`px-4 py-2.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all flex items-center gap-2 ${
+              activeTab === 'work-guide'
+                ? 'bg-slate-900 text-white shadow-xs'
+                : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
+            }`}
+          >
+            <Briefcase className="w-4 h-4 text-emerald-400" />
+            Work, Wages &amp; Career Guide
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('academic')}
+            className={`px-4 py-2.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all flex items-center gap-2 ${
+              activeTab === 'academic'
+                ? 'bg-slate-900 text-white shadow-xs'
+                : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
+            }`}
+          >
+            <GraduationCap className="w-4 h-4 text-teal-400" />
+            Academic Requirements & Eligibility
+          </button>
+          <button
+            type="button"
             onClick={() => setActiveTab('coverage')}
             className={`px-4 py-2.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all flex items-center gap-2 ${
               activeTab === 'coverage'
@@ -277,6 +349,18 @@ export const AdminDashboardPage: React.FC = () => {
           >
             <Globe className="w-4 h-4 text-emerald-500" />
             Country Coverage & Registries
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('visa')}
+            className={`px-4 py-2.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all flex items-center gap-2 ${
+              activeTab === 'visa'
+                ? 'bg-slate-900 text-white shadow-xs'
+                : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
+            }`}
+          >
+            <Compass className="w-4 h-4 text-teal-500" />
+            Visa Intelligence &amp; Centres
           </button>
           <button
             type="button"
@@ -369,21 +453,21 @@ export const AdminDashboardPage: React.FC = () => {
           <div className="space-y-6">
             {stats && (
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs">
-                  <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block">
+                <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-2xs">
+                  <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider block">
                     Global Destinations
                   </span>
-                  <p className="text-3xl font-black text-slate-900 mt-1">
+                  <p className="text-3xl font-heading font-semibold text-brand-navy tabular-nums mt-1">
                     {stats.summary.totalCountries}
                   </p>
-                  <p className="text-xs text-emerald-600 font-semibold mt-1">100% Curated Guides</p>
+                  <p className="text-xs text-emerald-600 font-medium mt-1">100% Curated Guides</p>
                 </div>
 
-                <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs">
-                  <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block">
+                <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-2xs">
+                  <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider block">
                     Higher Ed Institutions
                   </span>
-                  <p className="text-3xl font-black text-teal-600 mt-1">
+                  <p className="text-3xl font-heading font-semibold text-teal-700 tabular-nums mt-1">
                     {stats.summary.totalUniversities}
                   </p>
                   <p className="text-xs text-slate-500 mt-1">
@@ -391,24 +475,24 @@ export const AdminDashboardPage: React.FC = () => {
                   </p>
                 </div>
 
-                <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs">
-                  <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block">
+                <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-2xs">
+                  <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider block">
                     Academic Programs
                   </span>
-                  <p className="text-3xl font-black text-amber-500 mt-1">
+                  <p className="text-3xl font-heading font-semibold text-amber-600 tabular-nums mt-1">
                     {stats.summary.totalPrograms}
                   </p>
                   <p className="text-xs text-slate-500 mt-1">Bachelor, Master, PhD & Pathways</p>
                 </div>
 
-                <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs">
-                  <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block">
+                <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-2xs">
+                  <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider block">
                     Scholarship Funds
                   </span>
-                  <p className="text-3xl font-black text-slate-900 mt-1">
+                  <p className="text-3xl font-heading font-semibold text-brand-navy tabular-nums mt-1">
                     {stats.summary.totalScholarships}
                   </p>
-                  <p className="text-xs text-emerald-600 font-semibold mt-1">Government & Merit</p>
+                  <p className="text-xs text-emerald-600 font-medium mt-1">Government & Merit</p>
                 </div>
               </div>
             )}
@@ -683,11 +767,29 @@ export const AdminDashboardPage: React.FC = () => {
         {/* Tab 7: Global Country Coverage & Registry Ingestion Manager */}
         {activeTab === 'coverage' && <AdminCountryCoverageManager />}
 
-        {/* Tab 8: English Tests & Global Acceptance Manager */}
+        {/* Tab 8: Live Global Visa Intelligence & Bangladesh Centre Finder */}
+        {activeTab === 'visa' && <AdminVisaIntelligenceManager />}
+
+        {/* Tab 9: English Tests & Global Acceptance Manager */}
         {activeTab === 'english-tests' && <AdminEnglishTestsManager />}
 
-        {/* Tab 9: MOI & Language Waivers Manager */}
+        {/* Tab 10: MOI & Language Waivers Manager */}
         {activeTab === 'moi' && <AdminMoiManager />}
+
+        {/* Tab 11: Global Academic Eligibility & Subject Requirements Manager */}
+        {activeTab === 'academic' && <AdminAcademicEligibilityManager />}
+
+        {/* Tab 12: Super Admin Editorial Content Studio (100+ Articles & Research) */}
+        {activeTab === 'content' && <AdminContentStudio />}
+
+        {/* Tab 13: Link Health & Automated Repair Studio */}
+        {activeTab === 'link-health' && <AdminLinkHealthManager />}
+
+        {/* Tab 14: Career Toolkit, 52 Research Records, CV Models & Guides */}
+        {activeTab === 'career-toolkit' && <AdminCareerToolkitManager />}
+
+        {/* Tab 15: Global Country Work, Minimum Wage & Career Intelligence */}
+        {activeTab === 'work-guide' && <AdminCountryWorkGuideManager />}
       </div>
     </div>
   );

@@ -106,7 +106,7 @@ export const StudentReportsPage: React.FC = () => {
       <div className="min-h-screen bg-slate-50 py-16 px-4 text-center">
         <div className="max-w-md mx-auto bg-white p-8 rounded-2xl border border-slate-200 shadow-sm">
           <Flag className="w-12 h-12 text-teal-600 mx-auto mb-4" />
-          <h2 className="text-xl font-bold text-navy-950 font-serif mb-2">Authentication Required</h2>
+          <h2 className="text-xl font-heading font-semibold text-brand-navy tracking-tight mb-2">Authentication Required</h2>
           <p className="text-sm text-slate-600 mb-6">
             Please log in to your Borno Higher Study account to track your submitted corrections and respond to editorial feedback.
           </p>
@@ -226,7 +226,7 @@ export const StudentReportsPage: React.FC = () => {
                 <span className="p-2.5 rounded-xl bg-teal-50 text-teal-700">
                   <Flag className="w-6 h-6" />
                 </span>
-                <h1 className="text-2xl sm:text-3xl font-bold text-navy-950 font-serif">
+                <h1 className="text-2xl sm:text-3xl font-heading font-semibold text-brand-navy tracking-tight">
                   My Community Factual Reports
                 </h1>
               </div>
@@ -442,7 +442,7 @@ export const StudentReportsPage: React.FC = () => {
 
                     {/* Entity title */}
                     <div className="mt-3">
-                      <h3 className="text-lg font-bold text-navy-950 font-serif">
+                      <h3 className="text-lg font-heading font-semibold text-brand-navy tracking-tight">
                         {report.entityName}
                       </h3>
                       <p className="text-xs text-slate-600 mt-1 line-clamp-2">

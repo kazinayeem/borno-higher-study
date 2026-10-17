@@ -41,3 +41,18 @@ export const requireRole = (allowedRoles: string[]) => {
     next();
   };
 };
+
+export const optionalAuth = (req: Request, res: Response, next: NextFunction) => {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
+  if (!token) {
+    return next();
+  }
+  jwt.verify(token, JWT_SECRET, (err, user) => {
+    if (!err && user) {
+      (req as any).user = user as AuthUser;
+    }
+    next();
+  });
+};
+

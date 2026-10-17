@@ -54,22 +54,22 @@ export const Logo: React.FC<LogoProps> = ({ variant = 'auto', compact = false, c
         <div className="flex flex-col justify-center">
           <div className="flex items-center gap-1.5 whitespace-nowrap">
             <span
-              className={`font-heading font-extrabold text-lg sm:text-xl tracking-tight leading-none ${
-                variant === 'dark' ? 'text-white' : 'text-brand-navy'
+              className={`font-heading font-extrabold text-base sm:text-lg tracking-tight leading-none ${
+                variant === 'dark' ? 'text-white' : 'text-brand-navy dark:text-white'
               }`}
             >
               BORNO
             </span>
-            <span className="font-heading font-bold text-lg sm:text-xl text-teal-600 leading-none">
+            <span className="font-heading font-semibold text-base sm:text-lg text-teal-700 dark:text-teal-400 leading-none">
               HIGHER STUDY
             </span>
           </div>
           <span
-            className={`text-[9.5px] uppercase font-semibold tracking-wider whitespace-nowrap mt-0.5 hidden sm:block ${
-              variant === 'dark' ? 'text-slate-400' : 'text-slate-500'
+            className={`text-[9px] uppercase font-semibold tracking-wider whitespace-nowrap mt-0.5 hidden 2xl:block ${
+              variant === 'dark' ? 'text-slate-400' : 'text-slate-500 dark:text-slate-400'
             }`}
           >
-            Your Future • Your University • Your World
+            Education Research &amp; Admissions
           </span>
         </div>
       )}

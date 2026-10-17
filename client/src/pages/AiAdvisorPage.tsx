@@ -209,7 +209,7 @@ export const AiAdvisorPage: React.FC = () => {
               <button
                 key={idx}
                 onClick={() => handleSend(p)}
-                className="px-2.5 py-1 rounded-full bg-white border border-slate-200 hover:border-teal-500 hover:text-teal-700 text-slate-700 shrink-0 font-medium transition-colors"
+                className="px-2.5 py-1 rounded-lg bg-white border border-slate-200 hover:border-teal-500 hover:text-teal-700 text-slate-700 shrink-0 font-medium transition-colors"
               >
                 {p}
               </button>

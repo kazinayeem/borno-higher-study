@@ -7,6 +7,11 @@ import { SUBJECTS_DATA } from '../src/data/subjectsData.js';
 import { IngestionService } from '../src/services/ingestionService.js';
 import { EnglishTestService } from '../src/services/englishTestService.js';
 import { MoiService } from '../src/services/moiService.js';
+import { VisaIntelligenceService } from '../src/services/visaIntelligenceService.js';
+import { AcademicEligibilityService } from '../src/services/academicEligibilityService.js';
+import { contentPlatformService } from '../src/services/contentPlatformService.js';
+import { careerToolkitService } from '../src/services/careerToolkitService.js';
+import { countryWorkGuideService } from '../src/services/countryWorkGuideService.js';
 
 const prisma = new PrismaClient();
 
@@ -790,6 +795,26 @@ The Migration Department of Lithuania issues digital residence permits. Internat
   console.log('📜 Seeding MOI & English Language Exemption policies...');
   await MoiService.seedAllMoiData();
   console.log('✔ MOI and exemption policies synchronized');
+
+  console.log('🛂 Seeding Live Global Visa Intelligence, Statistics & Application Centres...');
+  await VisaIntelligenceService.seedAllVisaData();
+  console.log('✔ Global Visa Intelligence synchronized');
+
+  console.log('🎓 Seeding Global Academic Eligibility, Grade Scales & Subject Prerequisites...');
+  await AcademicEligibilityService.seedAllAcademicData();
+  console.log('✔ Academic Eligibility and Subject Requirements synchronized');
+
+  console.log('📚 Seeding Premium Educational Content, 100+ Articles, Research Papers & Comparisons...');
+  await contentPlatformService.seedAllContentData();
+  console.log('✔ Educational Articles, Research Papers, and Comparison Guides synchronized');
+
+  console.log('💼 Seeding Complete Career Toolkit, 52 Research Records, 12 CV Examples & Guides...');
+  await careerToolkitService.seedCareerToolkitData();
+  console.log('✔ Career Toolkit, 52 Research Records, 12 CV Examples & Guides synchronized');
+
+  console.log('🌐 Seeding Country Work Guide: Languages, Minimum Wages, Student Work & Career Roadmaps...');
+  await countryWorkGuideService.seedCountryWorkGuideData();
+  console.log('✔ Country Work Guide dataset synchronized');
 
   console.log('🎉 SQLite database seeded successfully!');
 }

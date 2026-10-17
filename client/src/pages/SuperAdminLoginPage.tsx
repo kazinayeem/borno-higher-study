@@ -75,7 +75,7 @@ export const SuperAdminLoginPage: React.FC = () => {
           <span>Restricted Governance Portal</span>
         </div>
 
-        <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight font-serif">
+        <h1 className="text-2xl sm:text-3xl font-heading font-semibold text-white tracking-tight">
           Super Admin Login
         </h1>
         <p className="mt-1 text-xs sm:text-sm text-slate-400">

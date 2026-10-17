@@ -158,7 +158,7 @@ export const StudentLoginPage: React.FC = () => {
           <span>Student & Contributor Portal</span>
         </div>
 
-        <h1 className="text-2xl sm:text-3xl font-extrabold text-navy-950 font-serif tracking-tight">
+        <h1 className="text-2xl sm:text-3xl font-heading font-semibold text-brand-navy tracking-tight">
           {mode === 'LOGIN' && 'Sign in to Your Student Account'}
           {mode === 'REGISTER' && 'Create Your Student Account'}
           {mode === 'FORGOT' && 'Reset Your Password'}

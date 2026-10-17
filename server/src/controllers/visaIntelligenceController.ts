@@ -69,7 +69,7 @@ export class VisaIntelligenceController {
   static async getUpdates(req: Request, res: Response): Promise<void> {
     try {
       const data = await VisaIntelligenceService.getSocialUpdates(req.query as any);
-      res.json(data);
+      res.json({ total: data.length, updates: data });
     } catch (error: any) {
       console.error('Error fetching visa updates:', error);
       res.status(500).json({ error: error.message || 'Failed to fetch visa updates' });

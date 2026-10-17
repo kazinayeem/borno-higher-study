@@ -4,84 +4,100 @@ import { Logo } from '../common/Logo.js';
 import { useAuth } from '../../context/AuthContext.js';
 import { useSaved } from '../../context/SavedContext.js';
 import { useCompare } from '../../context/CompareContext.js';
+import { useLanguage } from '../../context/LanguageContext.js';
+import { useTheme } from '../../context/ThemeContext.js';
+import { gsap, isReducedMotion, MOTION_DURATIONS, MOTION_EASE } from '../../utils/motion.js';
 import {
   Globe,
   GraduationCap,
   BookOpen,
   Award,
   Calculator,
-  CheckCircle2,
-  Sparkles,
-  Bookmark,
+  Compass,
+  FileCheck2,
+  Calendar,
   Scale,
   Menu,
   X,
   User,
   Shield,
   LogOut,
-  Calendar,
   ChevronDown,
-  Users,
-  FileLock2,
-  PenSquare,
-  Flag,
   Building2,
-  Compass,
+  Sparkles,
+  Bookmark,
+  ExternalLink,
+  Sun,
+  Moon,
+  Check,
   FileText,
+  Users,
+  Search,
+  CheckCircle2,
 } from 'lucide-react';
 
 export const Navbar: React.FC = () => {
   const location = useLocation();
-  const { user, isAuthenticated, isAdmin, logout } = useAuth();
+  const { user, isAuthenticated, isAdmin, isSuperAdmin, logout } = useAuth();
   const { savedUniversityIds, savedScholarshipIds } = useSaved();
   const { compareSlugs } = useCompare();
+  const { language, setLanguage, t, isBengali } = useLanguage();
+  const { theme, toggleTheme, isDark } = useTheme();
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
-  const [toolsDropdownOpen, setToolsDropdownOpen] = useState(false);
+  const [langMenuOpen, setLangMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
 
   const navRef = useRef<HTMLElement>(null);
-  const userMenuRef = useRef<HTMLDivElement>(null);
-  const toolsMenuRef = useRef<HTMLDivElement>(null);
-
   const totalSaved = savedUniversityIds.length + savedScholarshipIds.length;
 
-  // Handle scroll state for subtle shadow and depth
+  useEffect(() => {
+    if (!navRef.current || isReducedMotion()) return;
+    const ctx = gsap.context(() => {
+      gsap.fromTo(
+        navRef.current,
+        { y: -12, opacity: 0 },
+        { y: 0, opacity: 1, duration: MOTION_DURATIONS.standard, ease: MOTION_EASE.editorial, clearProps: 'transform' }
+      );
+    }, navRef);
+    return () => ctx.revert();
+  }, []);
+
   useEffect(() => {
     const handleScroll = () => {
-      setIsScrolled(window.scrollY > 8);
+      setIsScrolled(window.scrollY > 12);
     };
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Close menus when route changes
+  // Close menus on route change
   useEffect(() => {
     setMobileMenuOpen(false);
+    setActiveDropdown(null);
     setUserDropdownOpen(false);
-    setToolsDropdownOpen(false);
+    setLangMenuOpen(false);
   }, [location.pathname]);
 
-  // Close dropdowns on outside click or escape key
+  // Handle outside click & escape
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (navRef.current && !navRef.current.contains(e.target as Node)) {
+        setActiveDropdown(null);
         setUserDropdownOpen(false);
-      }
-      if (toolsMenuRef.current && !toolsMenuRef.current.contains(event.target as Node)) {
-        setToolsDropdownOpen(false);
+        setLangMenuOpen(false);
       }
     };
-
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setActiveDropdown(null);
         setUserDropdownOpen(false);
-        setToolsDropdownOpen(false);
+        setLangMenuOpen(false);
         setMobileMenuOpen(false);
       }
     };
-
     document.addEventListener('mousedown', handleClickOutside);
     document.addEventListener('keydown', handleKeyDown);
     return () => {
@@ -90,588 +106,759 @@ export const Navbar: React.FC = () => {
     };
   }, []);
 
-  const isActive = (path: string) => location.pathname === path;
-
-  // Core navigation items
-  const primaryLinks = [
-    { name: 'Countries', path: '/countries', icon: Globe },
-    { name: 'Institutions', path: '/universities', icon: GraduationCap },
-    { name: 'Courses', path: '/courses', icon: BookOpen },
-    { name: 'Scholarships', path: '/scholarships', icon: Award },
-    { name: 'Community', path: '/community', icon: Users },
-  ];
-
-  // Expanded tool items
-  const toolLinks = [
-    {
-      name: 'English Tests & Fees',
-      path: '/english-tests',
-      icon: Award,
-      desc: 'IELTS, PTE & TOEFL fees, formats & turnaround',
-    },
-    {
-      name: 'University Test Acceptance',
-      path: '/university-test-acceptance',
-      icon: Building2,
-      desc: 'Verify course & university test score rules',
-    },
-    {
-      name: 'English Test Advisor',
-      path: '/english-test-advisor',
-      icon: Compass,
-      desc: 'Find the best test for your shortlisted universities',
-    },
-    {
-      name: 'MOI Acceptance Directory',
-      path: '/moi-acceptance',
-      icon: FileText,
-      desc: 'Medium of Instruction university policies & exemptions',
-    },
-    {
-      name: 'MOI Eligibility Checker',
-      path: '/moi-eligibility-checker',
-      icon: Sparkles,
-      desc: 'Interactive questionnaire to check waiver eligibility',
-    },
-    {
-      name: 'Cost Calculator',
-      path: '/calculator',
-      icon: Calculator,
-      desc: 'Tuition & living expenses in BDT',
-    },
-    {
-      name: 'English Checker',
-      path: '/english-checker',
-      icon: CheckCircle2,
-      desc: 'IELTS, TOEFL & PTE eligibility',
-    },
-    {
-      name: 'Test Preparation Hub',
-      path: '/test-prep',
-      icon: BookOpen,
-      desc: 'Bangladesh coaching centers & free practice',
-    },
-    {
-      name: 'University Compare',
-      path: '/compare',
-      icon: Scale,
-      desc: 'Side-by-side institution analysis',
-    },
-    {
-      name: 'Application Planner',
-      path: '/planner',
-      icon: Calendar,
-      desc: 'Study abroad checklist & timeline',
-    },
-    {
-      name: 'Study Workspaces',
-      path: '/workspaces',
-      icon: Users,
-      desc: 'Shared study circles without password sharing',
-    },
-    {
-      name: 'Financial Vault',
-      path: '/dashboard/financial-documents',
-      icon: FileLock2,
-      desc: 'Confidential bank statement & solvency review',
-    },
-  ];
-
-  const isToolsActive =
-    isActive('/english-tests') ||
-    isActive('/university-test-acceptance') ||
-    isActive('/english-test-advisor') ||
-    isActive('/calculator') ||
-    isActive('/english-checker') ||
-    isActive('/test-prep') ||
-    isActive('/compare') ||
-    isActive('/planner') ||
-    isActive('/workspaces') ||
-    isActive('/dashboard/financial-documents');
+  const isActive = (path: string) => {
+    if (path === '/') return location.pathname === '/';
+    return location.pathname.startsWith(path);
+  };
 
   return (
     <header
       ref={navRef}
-      className={`sticky top-0 z-50 w-full bg-white/95 backdrop-blur-md transition-all duration-200 ${
+      className={`sticky top-0 z-50 w-full transition-all duration-200 border-b ${
         isScrolled
-          ? 'border-b border-slate-200/90 shadow-xs bg-white/98'
-          : 'border-b border-slate-200/70 bg-white/90'
+          ? 'bg-white/95 dark:bg-[#0B132B]/95 backdrop-blur-md border-slate-200/90 dark:border-slate-800 shadow-xs'
+          : 'bg-white dark:bg-[#0B132B] border-slate-200/80 dark:border-slate-800/70'
       }`}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16 gap-2 sm:gap-4">
-          {/* 1. Brand Logo */}
+        <div className="flex items-center justify-between h-16 gap-2">
+          {/* Brand Logo - Compact and restrained */}
           <div className="flex items-center shrink-0">
-            <Logo />
+            <Logo compact={false} />
           </div>
 
-          {/* 2. Desktop Navigation */}
-          <nav className="hidden lg:flex items-center gap-1 xl:gap-1.5 2xl:gap-2">
-            {/* Primary Discovery Links */}
-            {primaryLinks.map((link) => {
-              const Icon = link.icon;
-              const active = isActive(link.path);
-              return (
-                <Link
-                  key={link.path}
-                  to={link.path}
-                  className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs xl:text-[13px] font-semibold transition-colors whitespace-nowrap ${
-                    active
-                      ? 'text-teal-700 bg-teal-50 font-bold'
-                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/70'
-                  }`}
-                >
-                  <Icon className={`w-3.5 h-3.5 ${active ? 'text-teal-600' : 'text-slate-400'}`} />
-                  {link.name}
-                </Link>
-              );
-            })}
+          {/* Desktop Navigation Links */}
+          <nav className="hidden lg:flex items-center gap-0.5 xl:gap-1.5" aria-label="Main Navigation">
+            {/* 1. Universities */}
+            <Link
+              to="/universities"
+              className={`px-2.5 xl:px-3 py-1.5 rounded-md text-xs xl:text-sm font-medium transition-colors ${
+                isActive('/universities')
+                  ? 'text-teal-800 dark:text-teal-300 bg-teal-50 dark:bg-teal-950/60 font-semibold'
+                  : 'text-slate-700 dark:text-slate-200 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100/70 dark:hover:bg-slate-800/60'
+              }`}
+            >
+              {t('navigation.universities')}
+            </Link>
 
-            {/* Direct Tools on Extra Wide Desktop (>= 1360px), Dropdown on Compact Desktop (1024px-1359px) */}
-            <div className="hidden 2xl:flex items-center gap-1">
-              <Link
-                to="/calculator"
-                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs xl:text-[13px] font-semibold transition-colors whitespace-nowrap ${
-                  isActive('/calculator')
-                    ? 'text-teal-700 bg-teal-50 font-bold'
-                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/70'
-                }`}
-              >
-                <Calculator
-                  className={`w-3.5 h-3.5 ${isActive('/calculator') ? 'text-teal-600' : 'text-slate-400'}`}
-                />
-                Cost Calculator
-              </Link>
-              <Link
-                to="/english-checker"
-                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs xl:text-[13px] font-semibold transition-colors whitespace-nowrap ${
-                  isActive('/english-checker')
-                    ? 'text-teal-700 bg-teal-50 font-bold'
-                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/70'
-                }`}
-              >
-                <CheckCircle2
-                  className={`w-3.5 h-3.5 ${isActive('/english-checker') ? 'text-teal-600' : 'text-slate-400'}`}
-                />
-                English Checker
-              </Link>
-            </div>
+            {/* 2. Programs / Courses */}
+            <Link
+              to="/courses"
+              className={`px-2.5 xl:px-3 py-1.5 rounded-md text-xs xl:text-sm font-medium transition-colors ${
+                isActive('/courses')
+                  ? 'text-teal-800 dark:text-teal-300 bg-teal-50 dark:bg-teal-950/60 font-semibold'
+                  : 'text-slate-700 dark:text-slate-200 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100/70 dark:hover:bg-slate-800/60'
+              }`}
+            >
+              {t('navigation.programs')}
+            </Link>
 
-            {/* Tools Dropdown for Compact Desktop */}
-            <div className="relative 2xl:hidden" ref={toolsMenuRef}>
+            {/* 3. Countries */}
+            <Link
+              to="/countries"
+              className={`px-2.5 xl:px-3 py-1.5 rounded-md text-xs xl:text-sm font-medium transition-colors ${
+                isActive('/countries')
+                  ? 'text-teal-800 dark:text-teal-300 bg-teal-50 dark:bg-teal-950/60 font-semibold'
+                  : 'text-slate-700 dark:text-slate-200 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100/70 dark:hover:bg-slate-800/60'
+              }`}
+            >
+              {t('navigation.countries')}
+            </Link>
+
+            {/* 4. Scholarships */}
+            <Link
+              to="/scholarships"
+              className={`px-2.5 xl:px-3 py-1.5 rounded-md text-xs xl:text-sm font-medium transition-colors ${
+                isActive('/scholarships')
+                  ? 'text-teal-800 dark:text-teal-300 bg-teal-50 dark:bg-teal-950/60 font-semibold'
+                  : 'text-slate-700 dark:text-slate-200 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100/70 dark:hover:bg-slate-800/60'
+              }`}
+            >
+              {t('navigation.scholarships')}
+            </Link>
+
+            {/* INTERMEDIATE WIDTH COLLAPSIBLE: On 1024px-1279px, group secondary items into a clean 'More' menu */}
+            <div className="relative xl:hidden">
               <button
                 type="button"
-                onClick={() => setToolsDropdownOpen(!toolsDropdownOpen)}
-                className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs xl:text-[13px] font-semibold transition-colors whitespace-nowrap ${
-                  isToolsActive || toolsDropdownOpen
-                    ? 'text-teal-700 bg-teal-50 font-bold'
-                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/70'
+                onClick={() => setActiveDropdown(activeDropdown === 'more' ? null : 'more')}
+                className={`flex items-center gap-1 px-2.5 py-1.5 rounded-md text-xs font-medium transition-colors ${
+                  activeDropdown === 'more'
+                    ? 'text-teal-800 dark:text-teal-300 bg-teal-50 dark:bg-teal-950/60 font-semibold'
+                    : 'text-slate-700 dark:text-slate-200 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100/70 dark:hover:bg-slate-800/60'
                 }`}
-                aria-expanded={toolsDropdownOpen}
+                aria-expanded={activeDropdown === 'more'}
               >
-                <span>Tools</span>
-                <ChevronDown
-                  className={`w-3.5 h-3.5 transition-transform duration-200 ${
-                    toolsDropdownOpen ? 'rotate-180 text-teal-600' : 'text-slate-400'
-                  }`}
-                />
+                <span>{isBengali ? 'আরও টুল ও গাইড' : 'Admissions & Tools'}</span>
+                <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
               </button>
 
-              {toolsDropdownOpen && (
-                <div className="absolute left-0 mt-2 w-64 bg-white border border-slate-200 rounded-xl shadow-lg p-1.5 z-50 animate-in fade-in zoom-in-95 duration-100">
-                  {toolLinks.map((tool) => {
-                    const ToolIcon = tool.icon;
-                    const active = isActive(tool.path);
-                    return (
-                      <Link
-                        key={tool.path}
-                        to={tool.path}
-                        onClick={() => setToolsDropdownOpen(false)}
-                        className={`flex items-start gap-2.5 px-3 py-2 rounded-lg text-xs transition-colors ${
-                          active
-                            ? 'bg-teal-50 text-teal-800 font-bold'
-                            : 'text-slate-700 hover:bg-slate-50 font-medium'
-                        }`}
-                      >
-                        <ToolIcon className="w-4 h-4 text-teal-600 mt-0.5 shrink-0" />
-                        <div>
-                          <p className="font-semibold text-slate-900 leading-tight">{tool.name}</p>
-                          <p className="text-[11px] text-slate-500 font-normal leading-tight mt-0.5">
-                            {tool.desc}
-                          </p>
-                        </div>
+              {activeDropdown === 'more' && (
+                <div className="absolute left-0 mt-1.5 w-80 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-dropdown p-2 z-50 max-h-[80vh] overflow-y-auto">
+                  <div className="p-2 border-b border-slate-100 dark:border-slate-800">
+                    <p className="text-[11px] font-bold uppercase tracking-wider text-teal-700 dark:text-teal-400 mb-1">
+                      Admissions &amp; Visa
+                    </p>
+                    <div className="space-y-0.5">
+                      <Link to="/eligibility-checker" className="block px-2 py-1.5 rounded-lg text-xs text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800">
+                        {t('navigation.academicEligibilityChecker')}
                       </Link>
-                    );
-                  })}
+                      <Link to="/academic-requirements" className="block px-2 py-1.5 rounded-lg text-xs text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800">
+                        {t('navigation.academicThresholds')}
+                      </Link>
+                      <Link to="/visa-intelligence" className="block px-2 py-1.5 rounded-lg text-xs text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800">
+                        {t('navigation.liveVisaIntel')}
+                      </Link>
+                      <Link to="/visa-application-centres" className="block px-2 py-1.5 rounded-lg text-xs text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800">
+                        {t('navigation.applicationCentres')}
+                      </Link>
+                      <Link to="/country-work-guide" className="block px-2 py-1.5 rounded-lg text-xs font-semibold text-teal-700 dark:text-teal-400 hover:bg-slate-50 dark:hover:bg-slate-800">
+                        {t('navigation.countryWorkGuide')} (Wages &amp; Rules)
+                      </Link>
+                    </div>
+                  </div>
+
+                  <div className="p-2 border-b border-slate-100 dark:border-slate-800">
+                    <p className="text-[11px] font-bold uppercase tracking-wider text-teal-700 dark:text-teal-400 mb-1">
+                      Student Tools &amp; Career
+                    </p>
+                    <div className="space-y-0.5">
+                      <Link to="/calculator" className="block px-2 py-1.5 rounded-lg text-xs text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800">
+                        {t('navigation.tuitionCalculator')}
+                      </Link>
+                      <Link to="/english-tests" className="block px-2 py-1.5 rounded-lg text-xs text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800">
+                        {t('navigation.englishTests')}
+                      </Link>
+                      <Link to="/english-checker" className="block px-2 py-1.5 rounded-lg text-xs text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800">
+                        English Eligibility Checker
+                      </Link>
+                      <Link to="/advisor" className="block px-2 py-1.5 rounded-lg text-xs text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800">
+                        AI Study Advisor
+                      </Link>
+                      <Link to="/career-toolkit" className="block px-2 py-1.5 rounded-lg text-xs font-semibold text-teal-700 dark:text-teal-400 hover:bg-teal-50 dark:hover:bg-teal-950/40">
+                        CV &amp; Career Toolkit (Europass)
+                      </Link>
+                    </div>
+                  </div>
+
+                  <div className="p-2">
+                    <p className="text-[11px] font-bold uppercase tracking-wider text-teal-700 dark:text-teal-400 mb-1">
+                      Research &amp; Community
+                    </p>
+                    <div className="space-y-0.5">
+                      <Link to="/blog" className="block px-2 py-1.5 rounded-lg text-xs text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800">
+                        {t('navigation.editorialGuides')}
+                      </Link>
+                      <Link to="/research" className="block px-2 py-1.5 rounded-lg text-xs text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800">
+                        {t('navigation.researchLibrary')}
+                      </Link>
+                      <Link to="/community" className="block px-2 py-1.5 rounded-lg text-xs text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800">
+                        Student Community
+                      </Link>
+                    </div>
+                  </div>
                 </div>
               )}
             </div>
 
-            {/* AI Advisor Badge Link */}
-            <Link
-              to="/advisor"
-              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs xl:text-[13px] font-bold transition-all whitespace-nowrap ${
-                isActive('/advisor')
-                  ? 'bg-teal-600 text-white shadow-xs'
-                  : 'bg-teal-50 text-teal-800 hover:bg-teal-100 border border-teal-200/60'
-              }`}
-            >
-              <Sparkles
-                className={`w-3.5 h-3.5 ${isActive('/advisor') ? 'text-teal-100' : 'text-teal-600'}`}
-              />
-              AI Study Advisor
-            </Link>
+            {/* FULL EXPANSION (xl: screens 1280px and wider) */}
+            {/* 5. Admissions & Visa Dropdown */}
+            <div className="relative hidden xl:block">
+              <button
+                type="button"
+                onClick={() =>
+                  setActiveDropdown(activeDropdown === 'admissions' ? null : 'admissions')
+                }
+                className={`flex items-center gap-1 px-2.5 xl:px-3 py-1.5 rounded-md text-xs xl:text-sm font-medium transition-colors ${
+                  isActive('/eligibility-checker') ||
+                  isActive('/academic-requirements') ||
+                  isActive('/study-guides') ||
+                  isActive('/visa-intelligence') ||
+                  isActive('/visa-application-centres') ||
+                  activeDropdown === 'admissions'
+                    ? 'text-teal-800 dark:text-teal-300 bg-teal-50 dark:bg-teal-950/60 font-semibold'
+                    : 'text-slate-700 dark:text-slate-200 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100/70 dark:hover:bg-slate-800/60'
+                }`}
+                aria-expanded={activeDropdown === 'admissions'}
+              >
+                <span>{isBengali ? 'ভর্তি ও ভিসা' : 'Admissions & Visa'}</span>
+                <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+              </button>
+
+              {activeDropdown === 'admissions' && (
+                <div className="absolute left-0 mt-1.5 w-72 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-dropdown p-1.5 z-50">
+                  <Link
+                    to="/eligibility-checker"
+                    className="block px-3 py-2 rounded-lg text-xs hover:bg-slate-50 dark:hover:bg-slate-800/70 transition"
+                  >
+                    <p className="font-semibold text-slate-900 dark:text-slate-100">{t('navigation.academicEligibilityChecker')}</p>
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                      Evaluate SSC/HSC GPA &amp; degree CGPA criteria
+                    </p>
+                  </Link>
+                  <Link
+                    to="/academic-requirements"
+                    className="block px-3 py-2 rounded-lg text-xs hover:bg-slate-50 dark:hover:bg-slate-800/70 transition border-t border-slate-100 dark:border-slate-800"
+                  >
+                    <p className="font-semibold text-slate-900 dark:text-slate-100">{t('navigation.academicThresholds')}</p>
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                      Prerequisites by destination, level, and faculty
+                    </p>
+                  </Link>
+                  <Link
+                    to="/visa-intelligence"
+                    className="block px-3 py-2 rounded-lg text-xs hover:bg-slate-50 dark:hover:bg-slate-800/70 transition border-t border-slate-100 dark:border-slate-800"
+                  >
+                    <p className="font-semibold text-slate-900 dark:text-slate-100">{t('navigation.liveVisaIntel')}</p>
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                      Statutory proof of funds &amp; application timelines
+                    </p>
+                  </Link>
+                  <Link
+                    to="/visa-application-centres"
+                    className="block px-3 py-2 rounded-lg text-xs hover:bg-slate-50 dark:hover:bg-slate-800/70 transition border-t border-slate-100 dark:border-slate-800"
+                  >
+                    <p className="font-semibold text-slate-900 dark:text-slate-100">{t('navigation.applicationCentres')}</p>
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                      VFS Dhaka/Sylhet biometrics &amp; transit rules
+                    </p>
+                  </Link>
+                  <Link
+                    to="/visa-statistics"
+                    className="block px-3 py-2 rounded-lg text-xs hover:bg-slate-50 dark:hover:bg-slate-800/70 transition border-t border-slate-100 dark:border-slate-800"
+                  >
+                    <p className="font-semibold text-slate-900 dark:text-slate-100">{t('navigation.visaStatistics')}</p>
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                      Unmixed official approval and refusal rates
+                    </p>
+                  </Link>
+                  <Link
+                    to="/country-work-guide"
+                    className="block px-3 py-2 rounded-lg text-xs hover:bg-slate-50 dark:hover:bg-slate-800/70 transition border-t border-slate-100 dark:border-slate-800"
+                  >
+                    <p className="font-semibold text-slate-900 dark:text-slate-100 flex items-center justify-between">
+                      <span>{t('navigation.countryWorkGuide')}</span>
+                      <span className="text-[10px] px-1.5 py-0.2 rounded bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 font-bold">New</span>
+                    </p>
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                      Wages, student hours, post-study routes &amp; roadmaps
+                    </p>
+                  </Link>
+                </div>
+              )}
+            </div>
+
+            {/* 6. Tools & Career Dropdown */}
+            <div className="relative hidden xl:block">
+              <button
+                type="button"
+                onClick={() => setActiveDropdown(activeDropdown === 'tools' ? null : 'tools')}
+                className={`flex items-center gap-1 px-2.5 xl:px-3 py-1.5 rounded-md text-xs xl:text-sm font-medium transition-colors ${
+                  isActive('/calculator') ||
+                  isActive('/english-tests') ||
+                  isActive('/english-checker') ||
+                  isActive('/advisor') ||
+                  isActive('/career-toolkit') ||
+                  isActive('/planner') ||
+                  activeDropdown === 'tools'
+                    ? 'text-teal-800 dark:text-teal-300 bg-teal-50 dark:bg-teal-950/60 font-semibold'
+                    : 'text-slate-700 dark:text-slate-200 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100/70 dark:hover:bg-slate-800/60'
+                }`}
+                aria-expanded={activeDropdown === 'tools'}
+              >
+                <span>{isBengali ? 'টুলস ও ক্যারিয়ার' : 'Tools & Career'}</span>
+                <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+              </button>
+
+              {activeDropdown === 'tools' && (
+                <div className="absolute left-0 mt-1.5 w-72 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-dropdown p-1.5 z-50">
+                  <Link
+                    to="/calculator"
+                    className="block px-3 py-2 rounded-lg text-xs hover:bg-slate-50 dark:hover:bg-slate-800/70 transition"
+                  >
+                    <p className="font-semibold text-slate-900 dark:text-slate-100">{t('navigation.tuitionCalculator')}</p>
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                      Net tuition, blocked accounts &amp; BDT conversion
+                    </p>
+                  </Link>
+                  <Link
+                    to="/english-tests"
+                    className="block px-3 py-2 rounded-lg text-xs hover:bg-slate-50 dark:hover:bg-slate-800/70 transition border-t border-slate-100 dark:border-slate-800"
+                  >
+                    <p className="font-semibold text-slate-900 dark:text-slate-100">{t('navigation.englishTests')}</p>
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                      IELTS, PTE, TOEFL &amp; university cutoffs
+                    </p>
+                  </Link>
+                  <Link
+                    to="/english-checker"
+                    className="block px-3 py-2 rounded-lg text-xs hover:bg-slate-50 dark:hover:bg-slate-800/70 transition border-t border-slate-100 dark:border-slate-800"
+                  >
+                    <p className="font-semibold text-slate-900 dark:text-slate-100">English Eligibility Checker</p>
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                      Filter institutions matching your exact scores
+                    </p>
+                  </Link>
+                  <Link
+                    to="/advisor"
+                    className="block px-3 py-2 rounded-lg text-xs hover:bg-slate-50 dark:hover:bg-slate-800/70 transition border-t border-slate-100 dark:border-slate-800"
+                  >
+                    <p className="font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-1.5">
+                      <span>AI Study Advisor</span>
+                      <Sparkles className="w-3 h-3 text-teal-600" />
+                    </p>
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                      Interactive degree &amp; country recommendation
+                    </p>
+                  </Link>
+                  <Link
+                    to="/career-toolkit"
+                    className="block px-3 py-2 rounded-lg text-xs hover:bg-slate-50 dark:hover:bg-slate-800/70 transition border-t border-slate-100 dark:border-slate-800"
+                  >
+                    <p className="font-semibold text-teal-700 dark:text-teal-400">
+                      CV &amp; Career Toolkit
+                    </p>
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                      Europass, Academic CVs, Builder &amp; 52 Records
+                    </p>
+                  </Link>
+                </div>
+              )}
+            </div>
+
+            {/* 7. Research & Community Dropdown */}
+            <div className="relative hidden xl:block">
+              <button
+                type="button"
+                onClick={() =>
+                  setActiveDropdown(activeDropdown === 'research' ? null : 'research')
+                }
+                className={`flex items-center gap-1 px-2.5 xl:px-3 py-1.5 rounded-md text-xs xl:text-sm font-medium transition-colors ${
+                  isActive('/blog') ||
+                  isActive('/research') ||
+                  isActive('/community') ||
+                  activeDropdown === 'research'
+                    ? 'text-teal-800 dark:text-teal-300 bg-teal-50 dark:bg-teal-950/60 font-semibold'
+                    : 'text-slate-700 dark:text-slate-200 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100/70 dark:hover:bg-slate-800/60'
+                }`}
+                aria-expanded={activeDropdown === 'research'}
+              >
+                <span>{isBengali ? 'রিসার্চ ও কমিউনিটি' : 'Research & Community'}</span>
+                <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+              </button>
+
+              {activeDropdown === 'research' && (
+                <div className="absolute right-0 mt-1.5 w-72 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-dropdown p-1.5 z-50">
+                  <Link
+                    to="/blog"
+                    className="block px-3 py-2 rounded-lg text-xs hover:bg-slate-50 dark:hover:bg-slate-800/70 transition"
+                  >
+                    <p className="font-semibold text-slate-900 dark:text-slate-100">{t('navigation.editorialGuides')}</p>
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                      100+ comprehensive long-form admissions roadmaps
+                    </p>
+                  </Link>
+                  <Link
+                    to="/research"
+                    className="block px-3 py-2 rounded-lg text-xs hover:bg-slate-50 dark:hover:bg-slate-800/70 transition border-t border-slate-100 dark:border-slate-800"
+                  >
+                    <p className="font-semibold text-slate-900 dark:text-slate-100">{t('navigation.researchLibrary')}</p>
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                      Peer-reviewed academic research with registered DOIs
+                    </p>
+                  </Link>
+                  <Link
+                    to="/community"
+                    className="block px-3 py-2 rounded-lg text-xs hover:bg-slate-50 dark:hover:bg-slate-800/70 transition border-t border-slate-100 dark:border-slate-800"
+                  >
+                    <p className="font-semibold text-slate-900 dark:text-slate-100">Student Community Forum</p>
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                      Peer discussions, visa experiences &amp; verification
+                    </p>
+                  </Link>
+                </div>
+              )}
+            </div>
           </nav>
 
-          {/* 3. Action Tools & User Profile */}
-          <div className="hidden lg:flex items-center gap-2 xl:gap-2.5 shrink-0">
-            {/* Compare Tray Button */}
+          {/* Right Utility & Authentication Area */}
+          <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+            {/* Quick Compare */}
             <Link
               to="/compare"
-              className={`relative inline-flex items-center justify-center w-9 h-9 rounded-lg transition-colors ${
-                isActive('/compare')
-                  ? 'bg-amber-50 text-amber-700 font-bold'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
-              }`}
-              title="Compare Universities"
-              aria-label="Compare Universities"
+              className="p-1.5 sm:p-2 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg relative transition"
+              title={t('navigation.compareItems')}
+              aria-label={t('navigation.compareItems')}
             >
               <Scale className="w-4 h-4" />
               {compareSlugs.length > 0 && (
-                <span className="absolute top-1 right-1 min-w-[16px] h-4 px-1 bg-amber-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center ring-2 ring-white">
+                <span className="absolute top-0.5 right-0.5 w-4 h-4 rounded-full bg-teal-700 text-white text-[10px] font-bold flex items-center justify-center">
                   {compareSlugs.length}
                 </span>
               )}
-            </Link>
-
-            {/* Saved Bookmarks Button */}
-            <Link
-              to="/saved"
-              className={`relative inline-flex items-center justify-center w-9 h-9 rounded-lg transition-colors ${
-                isActive('/saved')
-                  ? 'bg-teal-50 text-teal-700 font-bold'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
-              }`}
-              title="Saved Items"
-              aria-label="Saved Items"
-            >
-              <Bookmark className="w-4 h-4" />
-              {totalSaved > 0 && (
-                <span className="absolute top-1 right-1 min-w-[16px] h-4 px-1 bg-teal-600 text-white text-[10px] font-bold rounded-full flex items-center justify-center ring-2 ring-white">
-                  {totalSaved}
-                </span>
-              )}
-            </Link>
-
-            {/* Vertical Divider */}
-            <div className="w-px h-5 bg-slate-200/80 mx-0.5" />
-
-            {/* User Profile or Sign In / CTA */}
-            {isAuthenticated && user ? (
-              <div className="relative" ref={userMenuRef}>
-                <button
-                  type="button"
-                  onClick={() => setUserDropdownOpen(!userDropdownOpen)}
-                  className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-slate-100 transition-colors text-left focus:outline-hidden"
-                  aria-expanded={userDropdownOpen}
-                >
-                  <div className="w-7 h-7 rounded-full bg-teal-100 text-teal-800 flex items-center justify-center font-bold text-xs shrink-0">
-                    {user.name.charAt(0).toUpperCase()}
-                  </div>
-                  <div className="hidden xl:block text-xs leading-none">
-                    <p className="font-semibold text-slate-800 max-w-[100px] truncate">{user.name}</p>
-                    <p className="text-slate-400 text-[9px] uppercase font-bold mt-0.5">{user.role}</p>
-                  </div>
-                  <ChevronDown className="w-3.5 h-3.5 text-slate-400 hidden xl:block" />
-                </button>
-
-                {userDropdownOpen && (
-                  <div className="absolute right-0 mt-2 w-52 bg-white border border-slate-200 rounded-xl shadow-lg py-1.5 z-50 animate-in fade-in zoom-in-95 duration-100">
-                    <div className="px-4 py-2 border-b border-slate-100">
-                      <p className="text-xs font-semibold text-slate-800 truncate">{user.name}</p>
-                      <p className="text-[11px] text-slate-500 truncate">{user.email}</p>
-                    </div>
-
-                    <Link
-                      to="/dashboard"
-                      onClick={() => setUserDropdownOpen(false)}
-                      className="flex items-center gap-2 px-4 py-2 text-xs text-slate-700 hover:bg-slate-50 font-medium"
-                    >
-                      <User className="w-3.5 h-3.5 text-slate-400" />
-                      Student Dashboard
-                    </Link>
-
-                    <Link
-                      to="/workspaces"
-                      onClick={() => setUserDropdownOpen(false)}
-                      className="flex items-center gap-2 px-4 py-2 text-xs text-slate-700 hover:bg-slate-50 font-medium"
-                    >
-                      <Users className="w-3.5 h-3.5 text-teal-600" />
-                      Study Workspaces
-                    </Link>
-
-                    <Link
-                      to="/dashboard/financial-documents"
-                      onClick={() => setUserDropdownOpen(false)}
-                      className="flex items-center gap-2 px-4 py-2 text-xs text-slate-700 hover:bg-slate-50 font-medium"
-                    >
-                      <FileLock2 className="w-3.5 h-3.5 text-slate-400" />
-                      Financial Documents
-                    </Link>
-
-                    <Link
-                      to="/dashboard/reports"
-                      onClick={() => setUserDropdownOpen(false)}
-                      className="flex items-center gap-2 px-4 py-2 text-xs text-slate-700 hover:bg-slate-50 font-medium"
-                    >
-                      <Flag className="w-3.5 h-3.5 text-slate-400" />
-                      My Factual Reports
-                    </Link>
-
-                    <Link
-                      to="/community/contribute"
-                      onClick={() => setUserDropdownOpen(false)}
-                      className="flex items-center gap-2 px-4 py-2 text-xs text-slate-700 hover:bg-slate-50 font-medium"
-                    >
-                      <PenSquare className="w-3.5 h-3.5 text-slate-400" />
-                      Contributor Studio
-                    </Link>
-
-                    {isAdmin && (
-                      <Link
-                        to="/admin"
-                        onClick={() => setUserDropdownOpen(false)}
-                        className="flex items-center gap-2 px-4 py-2 text-xs text-teal-700 hover:bg-teal-50 font-medium"
-                      >
-                        <Shield className="w-3.5 h-3.5 text-teal-600" />
-                        Admin Control Center
-                      </Link>
-                    )}
-
-                    <div className="border-t border-slate-100 my-1" />
-
-                    <button
-                      type="button"
-                      onClick={() => {
-                        logout();
-                        setUserDropdownOpen(false);
-                      }}
-                      className="w-full flex items-center gap-2 px-4 py-2 text-xs text-rose-600 hover:bg-rose-50 font-medium text-left"
-                    >
-                      <LogOut className="w-3.5 h-3.5" />
-                      Sign Out
-                    </button>
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div className="flex items-center gap-2">
-                <Link
-                  to="/super-admin/login"
-                  className="h-9 px-2.5 flex items-center gap-1.5 text-xs font-bold text-slate-700 hover:text-navy-950 hover:bg-slate-100 rounded-lg transition-colors whitespace-nowrap"
-                  title="Super Admin Governance Login"
-                >
-                  <Shield className="w-3.5 h-3.5 text-teal-600" />
-                  <span>Admin</span>
-                </Link>
-                <Link
-                  to="/student/login"
-                  className="h-9 px-3.5 flex items-center gap-1.5 text-xs font-bold text-white bg-teal-600 hover:bg-teal-700 rounded-lg shadow-xs transition-colors whitespace-nowrap"
-                >
-                  <GraduationCap className="w-4 h-4" />
-                  <span>Student Login</span>
-                </Link>
-              </div>
-            )}
-          </div>
-
-          {/* 4. Mobile & Tablet Controls */}
-          <div className="flex lg:hidden items-center gap-1 sm:gap-2 shrink-0">
-            {/* Compare Quick Access on Tablet */}
-            <Link
-              to="/compare"
-              className="relative p-2 text-slate-600 hover:text-slate-900 rounded-lg hover:bg-slate-100"
-              aria-label="Compare Universities"
-            >
-              <Scale className="w-5 h-5" />
-              {compareSlugs.length > 0 && (
-                <span className="absolute top-1 right-1 min-w-[15px] h-3.5 px-0.5 bg-amber-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center ring-2 ring-white">
-                  {compareSlugs.length}
-                </span>
-              )}
-            </Link>
-
-            {/* Saved Quick Access on Tablet */}
-            <Link
-              to="/saved"
-              className="relative p-2 text-slate-600 hover:text-slate-900 rounded-lg hover:bg-slate-100"
-              aria-label="Saved Bookmarks"
-            >
-              <Bookmark className="w-5 h-5" />
-              {totalSaved > 0 && (
-                <span className="absolute top-1 right-1 min-w-[15px] h-3.5 px-0.5 bg-teal-600 text-white text-[9px] font-bold rounded-full flex items-center justify-center ring-2 ring-white">
-                  {totalSaved}
-                </span>
-              )}
-            </Link>
-
-            {/* Hamburger / Close Menu Toggle */}
-            <button
-              type="button"
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="p-2 rounded-lg text-slate-700 hover:bg-slate-100 focus:outline-hidden focus:ring-2 focus:ring-teal-500"
-              aria-label="Toggle Navigation Menu"
-              aria-expanded={mobileMenuOpen}
-            >
-              {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* 5. Mobile & Tablet Navigation Drawer */}
-      {mobileMenuOpen && (
-        <div className="lg:hidden bg-white border-b border-slate-200 px-4 pt-3 pb-6 space-y-3 shadow-lg max-h-[calc(100vh-4rem)] overflow-y-auto animate-in slide-in-from-top-2 duration-150">
-          <div className="grid grid-cols-1 gap-1">
-            {/* All Primary Destinations */}
-            {primaryLinks.map((link) => {
-              const Icon = link.icon;
-              const active = isActive(link.path);
-              return (
-                <Link
-                  key={link.path}
-                  to={link.path}
-                  onClick={() => setMobileMenuOpen(false)}
-                  className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-semibold transition-colors ${
-                    active
-                      ? 'bg-teal-50 text-teal-800'
-                      : 'text-slate-700 hover:bg-slate-50'
-                  }`}
-                >
-                  <Icon className={`w-5 h-5 ${active ? 'text-teal-600' : 'text-slate-400'}`} />
-                  {link.name}
-                </Link>
-              );
-            })}
-
-            {/* All Interactive Tools */}
-            {toolLinks.map((tool) => {
-              const ToolIcon = tool.icon;
-              const active = isActive(tool.path);
-              return (
-                <Link
-                  key={tool.path}
-                  to={tool.path}
-                  onClick={() => setMobileMenuOpen(false)}
-                  className={`flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-semibold transition-colors ${
-                    active
-                      ? 'bg-teal-50 text-teal-800'
-                      : 'text-slate-700 hover:bg-slate-50'
-                  }`}
-                >
-                  <div className="flex items-center gap-3">
-                    <ToolIcon className={`w-5 h-5 ${active ? 'text-teal-600' : 'text-slate-400'}`} />
-                    <span>{tool.name}</span>
-                  </div>
-                  {tool.path === '/compare' && compareSlugs.length > 0 && (
-                    <span className="bg-amber-100 text-amber-800 text-[10px] font-bold px-2 py-0.5 rounded-full">
-                      {compareSlugs.length}
-                    </span>
-                  )}
-                </Link>
-              );
-            })}
-
-            {/* AI Study Advisor */}
-            <Link
-              to="/advisor"
-              onClick={() => setMobileMenuOpen(false)}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-bold mt-1 transition-colors ${
-                isActive('/advisor')
-                  ? 'bg-teal-600 text-white'
-                  : 'bg-teal-50 text-teal-800 border border-teal-200/60'
-              }`}
-            >
-              <Sparkles className={`w-5 h-5 ${isActive('/advisor') ? 'text-white' : 'text-teal-600'}`} />
-              AI Study Advisor
             </Link>
 
             {/* Saved Bookmarks */}
             <Link
               to="/saved"
-              onClick={() => setMobileMenuOpen(false)}
-              className="flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-semibold text-slate-700 hover:bg-slate-50"
+              className="p-1.5 sm:p-2 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg relative transition"
+              title={t('navigation.savedItems')}
+              aria-label={t('navigation.savedItems')}
             >
-              <div className="flex items-center gap-3">
-                <Bookmark className="w-5 h-5 text-slate-400" />
-                <span>Saved Bookmarks</span>
-              </div>
+              <Bookmark className="w-4 h-4" />
               {totalSaved > 0 && (
-                <span className="bg-teal-100 text-teal-800 text-[10px] font-bold px-2 py-0.5 rounded-full">
+                <span className="absolute top-0.5 right-0.5 w-4 h-4 rounded-full bg-teal-700 text-white text-[10px] font-bold flex items-center justify-center">
                   {totalSaved}
                 </span>
               )}
             </Link>
-          </div>
 
-          {/* User Auth Section in Mobile Drawer */}
-          <div className="pt-3 border-t border-slate-200 flex flex-col gap-2">
-            {isAuthenticated && user ? (
-              <>
-                <Link
-                  to="/dashboard"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="w-full text-center py-2.5 rounded-lg text-sm font-semibold bg-slate-100 text-slate-800 hover:bg-slate-200"
-                >
-                  Student Dashboard ({user.name})
-                </Link>
-                <Link
-                  to="/dashboard/reports"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="w-full text-center py-2.5 rounded-lg text-sm font-semibold bg-white border border-slate-200 text-slate-700 hover:bg-slate-50"
-                >
-                  My Factual Reports
-                </Link>
-                {isAdmin && (
-                  <Link
-                    to="/admin"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="w-full text-center py-2.5 rounded-lg text-sm font-semibold bg-teal-50 text-teal-800 border border-teal-200"
+            {/* Language Selector */}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setLangMenuOpen(!langMenuOpen)}
+                className="flex items-center gap-1 px-2 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 text-xs font-semibold transition"
+                aria-label={`Language: ${language === 'en' ? 'English' : 'বাংলা'}`}
+                title="Select language / ভাষা নির্বাচন"
+              >
+                <Globe className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400" />
+                <span className="hidden sm:inline">{language === 'en' ? 'EN' : 'বাং'}</span>
+                <ChevronDown className="w-3 h-3 text-slate-400" />
+              </button>
+
+              {langMenuOpen && (
+                <div className="absolute right-0 mt-1.5 w-32 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-dropdown p-1 z-50">
+                  <button
+                    type="button"
+                    onClick={() => { setLanguage('en'); setLangMenuOpen(false); }}
+                    className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs font-medium transition ${
+                      language === 'en'
+                        ? 'bg-teal-50 dark:bg-teal-950/60 text-teal-800 dark:text-teal-300 font-bold'
+                        : 'text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700'
+                    }`}
                   >
-                    Admin Verification Dashboard
-                  </Link>
-                )}
+                    <span>English</span>
+                    {language === 'en' && <Check className="w-3.5 h-3.5" />}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setLanguage('bn'); setLangMenuOpen(false); }}
+                    className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs font-medium transition font-bengali ${
+                      language === 'bn'
+                        ? 'bg-teal-50 dark:bg-teal-950/60 text-teal-800 dark:text-teal-300 font-bold'
+                        : 'text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700'
+                    }`}
+                  >
+                    <span>বাংলা</span>
+                    {language === 'bn' && <Check className="w-3.5 h-3.5" />}
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Theme Toggle */}
+            <button
+              type="button"
+              onClick={toggleTheme}
+              className="p-1.5 sm:p-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 transition"
+              aria-label={isDark ? 'Switch to Light mode' : 'Switch to Dark mode'}
+              title={isDark ? t('navigation.lightMode') : t('navigation.darkMode')}
+            >
+              {isDark ? (
+                <Sun className="w-4 h-4 text-amber-400 hover:rotate-45 transition-transform" />
+              ) : (
+                <Moon className="w-4 h-4 text-slate-600 hover:-rotate-12 transition-transform" />
+              )}
+            </button>
+
+            {/* Authentication Portal Action */}
+            {isAuthenticated && user ? (
+              <div className="relative">
                 <button
                   type="button"
-                  onClick={() => {
-                    logout();
-                    setMobileMenuOpen(false);
-                  }}
-                  className="w-full text-center py-2.5 rounded-lg text-sm font-semibold text-rose-600 bg-rose-50 hover:bg-rose-100"
+                  onClick={() => setUserDropdownOpen(!userDropdownOpen)}
+                  className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-xs font-semibold text-slate-800 dark:text-slate-200 transition"
                 >
-                  Sign Out
+                  <div className="w-6 h-6 rounded-full bg-[#0B192C] dark:bg-teal-900 text-white flex items-center justify-center text-xs font-bold">
+                    {user.name ? user.name.charAt(0) : 'U'}
+                  </div>
+                  <span className="hidden md:inline max-w-[90px] truncate">{user.name}</span>
+                  <ChevronDown className="w-3 h-3 text-slate-400" />
                 </button>
-              </>
+
+                {userDropdownOpen && (
+                  <div className="absolute right-0 mt-1.5 w-56 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl shadow-dropdown p-1.5 z-50">
+                    <div className="px-3 py-2 border-b border-slate-100 dark:border-slate-800 text-xs">
+                      <p className="font-bold text-slate-900 dark:text-slate-100 truncate">{user.name}</p>
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">{user.email}</p>
+                      <span className="inline-block mt-1 px-1.5 py-0.2 rounded text-[10px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
+                        {user.role}
+                      </span>
+                    </div>
+
+                    {isAdmin || isSuperAdmin ? (
+                      <>
+                        <Link
+                          to="/super-admin/dashboard"
+                          className="block px-3 py-2 rounded-lg text-xs hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 font-semibold"
+                        >
+                          {t('navigation.superAdminDashboard')}
+                        </Link>
+                        <Link
+                          to="/super-admin/dashboard?tab=career-toolkit"
+                          className="block px-3 py-2 rounded-lg text-xs hover:bg-slate-50 dark:hover:bg-slate-800 text-teal-800 dark:text-teal-400 font-semibold"
+                        >
+                          Career Toolkit Governance
+                        </Link>
+                        <Link
+                          to="/super-admin/dashboard?tab=content"
+                          className="block px-3 py-2 rounded-lg text-xs hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 font-semibold"
+                        >
+                          {t('navigation.contentStudio')}
+                        </Link>
+                      </>
+                    ) : (
+                      <Link
+                        to="/student/dashboard"
+                        className="block px-3 py-2 rounded-lg text-xs hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 font-semibold"
+                      >
+                        {t('navigation.studentDashboard')}
+                      </Link>
+                    )}
+
+                    <Link
+                      to="/planner"
+                      className="block px-3 py-2 rounded-lg text-xs hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200"
+                    >
+                      {t('navigation.applicationPlanner')}
+                    </Link>
+
+                    <button
+                      type="button"
+                      onClick={logout}
+                      className="w-full text-left px-3 py-2 rounded-lg text-xs text-rose-700 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/50 border-t border-slate-100 dark:border-slate-800 mt-1 flex items-center gap-1.5 font-semibold"
+                    >
+                      <LogOut className="w-3.5 h-3.5" />
+                      {t('navigation.signOut')}
+                    </button>
+                  </div>
+                )}
+              </div>
             ) : (
-              <>
+              <div className="flex items-center gap-1.5 sm:gap-2">
                 <Link
                   to="/student/login"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="w-full text-center py-2.5 rounded-lg text-sm font-bold bg-teal-600 text-white shadow-xs hover:bg-teal-700 flex items-center justify-center gap-2"
+                  className="px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-semibold text-white bg-brand-navy dark:bg-teal-700 hover:bg-slate-800 dark:hover:bg-teal-600 transition shadow-2xs flex items-center gap-1.5"
                 >
-                  <GraduationCap className="w-4 h-4" />
-                  <span>Student Portal Login</span>
+                  <User className="w-3.5 h-3.5 text-teal-400 hidden sm:inline" />
+                  <span>{t('navigation.studentSignIn')}</span>
                 </Link>
                 <Link
                   to="/super-admin/login"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="w-full text-center py-2.5 rounded-lg text-xs font-bold text-slate-300 bg-slate-900 border border-slate-700 hover:bg-slate-800 flex items-center justify-center gap-2"
+                  className="hidden md:inline-flex px-2 py-1.5 rounded-lg text-xs font-medium text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 transition"
+                  title={t('navigation.superAdminPortal')}
                 >
-                  <Shield className="w-3.5 h-3.5 text-teal-400" />
-                  <span>Super Admin Login</span>
+                  Admin
                 </Link>
-              </>
+              </div>
             )}
+
+            {/* Mobile Hamburger Toggle */}
+            <button
+              type="button"
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="lg:hidden p-2 rounded-lg text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition min-w-[38px] min-h-[38px] flex items-center justify-center"
+              aria-label={t('navigation.menu')}
+            >
+              {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Mobile Drawer */}
+      {mobileMenuOpen && (
+        <div className="lg:hidden fixed inset-x-0 top-16 bottom-0 bg-white dark:bg-[#0B132B] border-t border-slate-200 dark:border-slate-800 overflow-y-auto z-40 p-5 space-y-6 transition-colors">
+          {/* Quick Mobile Language & Theme Bar */}
+          <div className="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-slate-800">
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-slate-500 dark:text-slate-400 font-semibold">{t('navigation.language')}:</span>
+              <button
+                type="button"
+                onClick={() => setLanguage('en')}
+                className={`px-2.5 py-1 rounded text-xs font-bold ${
+                  language === 'en'
+                    ? 'bg-teal-700 text-white'
+                    : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300'
+                }`}
+              >
+                English
+              </button>
+              <button
+                type="button"
+                onClick={() => setLanguage('bn')}
+                className={`px-2.5 py-1 rounded text-xs font-bold font-bengali ${
+                  language === 'bn'
+                    ? 'bg-teal-700 text-white'
+                    : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300'
+                }`}
+              >
+                বাংলা
+              </button>
+            </div>
+
+            <button
+              type="button"
+              onClick={toggleTheme}
+              className="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-xs font-semibold flex items-center gap-1.5"
+            >
+              {isDark ? <Sun className="w-3.5 h-3.5 text-amber-400" /> : <Moon className="w-3.5 h-3.5 text-slate-600" />}
+              <span>{isDark ? t('navigation.lightMode') : t('navigation.darkMode')}</span>
+            </button>
+          </div>
+
+          {/* User Sign In Actions on Mobile */}
+          {!isAuthenticated && (
+            <div className="grid grid-cols-2 gap-3 pb-2">
+              <Link
+                to="/student/login"
+                className="w-full py-2.5 px-3 rounded-lg bg-[#0B192C] text-white text-xs font-semibold text-center hover:bg-slate-800 transition flex items-center justify-center gap-1.5"
+              >
+                <User className="w-3.5 h-3.5 text-teal-400" />
+                <span>{t('navigation.studentSignIn')}</span>
+              </Link>
+              <Link
+                to="/super-admin/login"
+                className="w-full py-2.5 px-3 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold text-center hover:bg-slate-50 dark:hover:bg-slate-800 transition flex items-center justify-center gap-1.5"
+              >
+                <Shield className="w-3.5 h-3.5 text-slate-500" />
+                <span>Super Admin</span>
+              </Link>
+            </div>
+          )}
+
+          {/* Section 1: Directory */}
+          <div>
+            <h4 className="text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-2">
+              Institution &amp; Degree Discovery
+            </h4>
+            <div className="space-y-1">
+              <Link
+                to="/universities"
+                className="flex items-center justify-between p-2 rounded-lg text-sm font-semibold text-slate-800 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800"
+              >
+                <span>{t('navigation.universities')} (940+)</span>
+              </Link>
+              <Link
+                to="/courses"
+                className="flex items-center justify-between p-2 rounded-lg text-sm font-semibold text-slate-800 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800"
+              >
+                <span>{t('navigation.programs')}</span>
+              </Link>
+              <Link
+                to="/countries"
+                className="flex items-center justify-between p-2 rounded-lg text-sm font-semibold text-slate-800 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800"
+              >
+                <span>{t('navigation.countries')} (42)</span>
+              </Link>
+              <Link
+                to="/scholarships"
+                className="flex items-center justify-between p-2 rounded-lg text-sm font-semibold text-slate-800 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800"
+              >
+                <span>{t('navigation.scholarships')} (20 Verified)</span>
+              </Link>
+            </div>
+          </div>
+
+          {/* Section 2: Admissions & Funding */}
+          <div className="pt-4 border-t border-slate-100 dark:border-slate-800">
+            <h4 className="text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-2">
+              Admissions, Criteria &amp; Funding
+            </h4>
+            <div className="space-y-1">
+              <Link
+                to="/eligibility-checker"
+                className="flex items-center justify-between p-2 rounded-lg text-sm font-semibold text-slate-800 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800"
+              >
+                <span>{t('navigation.academicEligibilityChecker')}</span>
+              </Link>
+              <Link
+                to="/academic-requirements"
+                className="flex items-center justify-between p-2 rounded-lg text-sm font-semibold text-slate-800 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800"
+              >
+                <span>{t('navigation.academicThresholds')}</span>
+              </Link>
+              <Link
+                to="/english-tests"
+                className="flex items-center justify-between p-2 rounded-lg text-sm font-semibold text-slate-800 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800"
+              >
+                <span>{t('navigation.englishTests')}</span>
+              </Link>
+              <Link
+                to="/english-checker"
+                className="flex items-center justify-between p-2 rounded-lg text-sm font-semibold text-slate-800 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800"
+              >
+                <span>English Eligibility Checker</span>
+              </Link>
+              <Link
+                to="/career-toolkit"
+                className="flex items-center justify-between p-2 rounded-lg text-sm font-semibold text-teal-700 dark:text-teal-400 hover:bg-teal-50 dark:hover:bg-teal-950/40"
+              >
+                <span>CV &amp; Career Toolkit (Europass)</span>
+              </Link>
+              <Link
+                to="/country-work-guide"
+                className="flex items-center justify-between p-2 rounded-lg text-sm font-semibold text-teal-700 dark:text-teal-400 hover:bg-teal-50 dark:hover:bg-teal-950/40"
+              >
+                <span>{t('navigation.countryWorkGuide')} (Wages &amp; Rules)</span>
+                <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 font-bold">
+                  New
+                </span>
+              </Link>
+            </div>
+          </div>
+
+          {/* Section 3: Tools & Intelligence */}
+          <div className="pt-4 border-t border-slate-100 dark:border-slate-800">
+            <h4 className="text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-2">
+              Tools &amp; Visa Intelligence
+            </h4>
+            <div className="space-y-1">
+              <Link
+                to="/calculator"
+                className="flex items-center justify-between p-2 rounded-lg text-sm font-semibold text-slate-800 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800"
+              >
+                <span>{t('navigation.tuitionCalculator')} (BDT)</span>
+              </Link>
+              <Link
+                to="/advisor"
+                className="flex items-center justify-between p-2 rounded-lg text-sm font-semibold text-slate-800 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800"
+              >
+                <span className="flex items-center gap-1.5">
+                  <span>AI Study Advisor</span>
+                  <Sparkles className="w-3.5 h-3.5 text-teal-600" />
+                </span>
+              </Link>
+              <Link
+                to="/visa-intelligence"
+                className="flex items-center justify-between p-2 rounded-lg text-sm font-semibold text-slate-800 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800"
+              >
+                <span>{t('navigation.liveVisaIntel')}</span>
+              </Link>
+              <Link
+                to="/visa-application-centres"
+                className="flex items-center justify-between p-2 rounded-lg text-sm font-semibold text-slate-800 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800"
+              >
+                <span>{t('navigation.applicationCentres')}</span>
+              </Link>
+              <Link
+                to="/community"
+                className="flex items-center justify-between p-2 rounded-lg text-sm font-semibold text-slate-800 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800"
+              >
+                <span>Student Community Forum</span>
+              </Link>
+            </div>
           </div>
         </div>
       )}

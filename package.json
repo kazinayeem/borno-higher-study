@@ -17,7 +17,16 @@
     "test:coverage": "npx tsx scripts/verifyInstitutionCoverage.ts",
     "test:english-tests": "npx tsx scripts/verifyEnglishTestModule.ts",
     "test:moi": "npx tsx scripts/verifyMoiSystem.ts",
-    "test:seo": "npx tsx scripts/seoAudit.ts"
+    "test:visa": "npx tsx scripts/verifyVisaIntelligence.ts",
+    "test:academic": "npx tsx scripts/verifyAcademicEligibility.ts",
+    "test:content": "npx tsx scripts/verifyContentPlatform.ts",
+    "test:links": "npx tsx scripts/verifyLinkHealth.ts",
+    "test:seo": "npx tsx scripts/seoAudit.ts",
+    "test:i18n": "npx tsx scripts/verifyBilingualTheme.ts",
+    "test:motion": "npx tsx scripts/verifyAnimationSystem.ts",
+    "test:career-toolkit": "npx tsx scripts/verifyCareerToolkit.ts",
+    "test:work-guide": "npx tsx scripts/verifyCountryWorkGuide.ts",
+    "test:responsive": "npx tsx scripts/verifyResponsiveLayout.ts"
   },
   "keywords": [
     "study-abroad",

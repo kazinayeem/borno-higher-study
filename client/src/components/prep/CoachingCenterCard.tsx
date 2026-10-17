@@ -107,7 +107,7 @@ export const CoachingCenterCard: React.FC<CoachingCenterCardProps> = ({ center }
         {/* Authorized Student Review Snippet */}
         {center.studentReviewSnippet && (
           <div className="bg-slate-50 rounded-xl p-3 text-xs text-slate-600 italic border border-slate-100 flex items-start gap-2">
-            <span className="text-teal-600 font-serif font-black text-lg leading-none">“</span>
+            <span className="text-teal-600 font-heading font-bold text-lg leading-none">“</span>
             <p className="leading-snug not-italic text-slate-600">
               {center.studentReviewSnippet}
             </p>

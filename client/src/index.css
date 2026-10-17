@@ -3,58 +3,123 @@
 @tailwind utilities;
 
 @layer base {
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    -webkit-tap-highlight-color: transparent;
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+    text-size-adjust: 100%;
+    -webkit-text-size-adjust: 100%;
+  }
+
   body {
-    @apply bg-slate-50 text-slate-900 font-sans antialiased selection:bg-teal-500 selection:text-white;
+    @apply bg-white dark:bg-[#0B132B] text-slate-800 dark:text-slate-100 font-sans antialiased selection:bg-teal-800 selection:text-white transition-colors duration-200;
+    font-family: 'Inter', 'Noto Sans Bengali', system-ui, -apple-system, sans-serif;
+    line-height: 1.6;
+    margin: 0;
+    padding: 0;
+    min-width: 320px;
   }
 
   h1, h2, h3, h4, h5, h6 {
-    @apply font-heading tracking-tight text-brand-navy;
+    font-family: 'DM Sans', 'Noto Sans Bengali', 'Inter', system-ui, sans-serif;
+    @apply text-brand-navy dark:text-slate-50 tracking-tight font-semibold;
+    overflow-wrap: break-word;
+  }
+
+  p, span, a, label {
+    overflow-wrap: break-word;
+  }
+
+  img, svg, video, canvas, audio, iframe, embed, object {
+    max-width: 100%;
+    height: auto;
+  }
+
+  input, select, textarea, button {
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  /* Language Specific Typography Adjustments */
+  [lang="bn"] body, [lang="bn"] {
+    font-family: 'Noto Sans Bengali', 'Inter', system-ui, sans-serif;
+    line-height: 1.75;
+  }
+
+  [lang="bn"] h1, [lang="bn"] h2, [lang="bn"] h3, [lang="bn"] h4, [lang="bn"] h5, [lang="bn"] h6 {
+    font-family: 'Noto Sans Bengali', 'DM Sans', sans-serif;
+    line-height: 1.35;
+  }
+
+  /* Tabular Numerals for Financial Data & Tables */
+  .tabular-nums, table, th, td, [data-tabular] {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: 'tnum';
+  }
+
+  /* Clear and accessible focus indicator */
+  :focus-visible {
+    outline: 2px solid #0D9488;
+    outline-offset: 2px;
   }
 }
 
-/* Custom modern scrollbar */
+/* Subtle, clean modern scrollbar with dark mode support */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #f1f5f9;
+  background: #f5f5f4;
+}
+
+.dark ::-webkit-scrollbar-track {
+  background: #0f172a;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
-  border-radius: 4px;
+  background: #d6d3d1;
+  border-radius: 3px;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: #334155;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
+  background: #a8a29e;
 }
 
-/* Smooth glassmorphic effect */
-.glass-panel {
-  background: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: #475569;
 }
 
-.glass-panel-dark {
-  background: rgba(11, 25, 44, 0.92);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+/* Accessible Reduced Motion Support */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
-/* Gradient accents */
-.gradient-navy-teal {
-  background: linear-gradient(135deg, #0B192C 0%, #0D9488 100%);
-}
-
-.gradient-teal-gold {
-  background: linear-gradient(135deg, #0D9488 0%, #D97706 100%);
-}
-
-.text-gradient {
-  background: linear-gradient(135deg, #0B192C 20%, #0D9488 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+/* Editorial Print Styling */
+@media print {
+  header, footer, nav, button, .no-print {
+    display: none !important;
+  }
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+  }
 }

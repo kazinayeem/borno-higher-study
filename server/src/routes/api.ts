@@ -27,7 +27,7 @@ import {
   updateUniversityVerification,
   previewCsvImport,
 } from '../controllers/adminController.js';
-import { authenticateToken, requireRole } from '../middleware/authMiddleware.js';
+import { authenticateToken, requireRole, optionalAuth } from '../middleware/authMiddleware.js';
 import { SUBJECTS_DATA } from '../data/subjectsData.js';
 import { ENGLISH_COACHING_CENTERS, OFFICIAL_PRACTICE_RESOURCES } from '../data/englishPrepData.js';
 import {
@@ -80,6 +80,12 @@ import {
 } from '../controllers/ingestionController.js';
 import { EnglishTestController } from '../controllers/englishTestController.js';
 import { MoiController } from '../controllers/moiController.js';
+import { VisaIntelligenceController } from '../controllers/visaIntelligenceController.js';
+import { AcademicEligibilityController } from '../controllers/academicEligibilityController.js';
+import * as ContentPlatformController from '../controllers/contentPlatformController.js';
+import { linkHealthController } from '../controllers/linkHealthController.js';
+import { careerToolkitController } from '../controllers/careerToolkitController.js';
+import { countryWorkGuideController } from '../controllers/countryWorkGuideController.js';
 
 const router = Router();
 
@@ -470,5 +476,322 @@ router.get(
   MoiController.getOutdatedPolicies
 );
 
+// ==========================================
+// LIVE GLOBAL VISA INTELLIGENCE & APPLICATION CENTRES ROUTES
+// ==========================================
+
+// Public Visa Intelligence Routes
+router.get('/visa/statistics', VisaIntelligenceController.getStatistics);
+router.get('/visa/country/:countryCode', VisaIntelligenceController.getCountryIntelligence);
+router.get('/visa/centres', VisaIntelligenceController.getCentres);
+router.post('/visa/find-centre', VisaIntelligenceController.findCentre);
+router.get('/visa/updates', VisaIntelligenceController.getUpdates);
+router.get('/visa/search', VisaIntelligenceController.search);
+router.post('/visa/corrections', VisaIntelligenceController.submitCorrection);
+
+// Admin Visa Intelligence Routes
+router.get(
+  '/admin/visa/corrections',
+  authenticateToken,
+  requireRole(['SUPER_ADMIN', 'ADMIN']),
+  VisaIntelligenceController.adminGetCorrections
+);
+
+router.post(
+  '/admin/visa/corrections/:id/review',
+  authenticateToken,
+  requireRole(['SUPER_ADMIN', 'ADMIN']),
+  VisaIntelligenceController.adminReviewCorrection
+);
+
+router.put(
+  '/admin/visa/statistics/:id',
+  authenticateToken,
+  requireRole(['SUPER_ADMIN', 'ADMIN']),
+  VisaIntelligenceController.adminUpdateStatistics
+);
+
+router.post(
+  '/admin/visa/seed',
+  authenticateToken,
+  requireRole(['SUPER_ADMIN', 'ADMIN']),
+  VisaIntelligenceController.triggerSeed
+);
+
+// ============================================================================
+// GLOBAL ACADEMIC ELIGIBILITY & SUBJECT REQUIREMENTS ROUTES (SECTION 14)
+// ============================================================================
+
+// Public Academic Eligibility APIs
+router.get('/academic/requirements', AcademicEligibilityController.getRequirements);
+router.get('/academic/requirements/:id', AcademicEligibilityController.getRequirementById);
+router.post('/academic/evaluate', AcademicEligibilityController.evaluate);
+router.get('/academic/grade-scales', AcademicEligibilityController.getGradeScales);
+router.get('/academic/equivalencies', AcademicEligibilityController.getEquivalencies);
+router.post('/academic/corrections', AcademicEligibilityController.submitCorrection);
+
+// Admin Academic Eligibility APIs
+router.get(
+  '/admin/academic/corrections',
+  authenticateToken,
+  requireRole(['SUPER_ADMIN', 'ADMIN']),
+  AcademicEligibilityController.adminGetCorrections
+);
+
+router.post(
+  '/admin/academic/corrections/:id/review',
+  authenticateToken,
+  requireRole(['SUPER_ADMIN', 'ADMIN']),
+  AcademicEligibilityController.adminReviewCorrection
+);
+
+router.put(
+  '/admin/academic/requirements/:id',
+  authenticateToken,
+  requireRole(['SUPER_ADMIN', 'ADMIN']),
+  AcademicEligibilityController.adminUpdateRequirement
+);
+
+router.post(
+  '/admin/academic/seed',
+  authenticateToken,
+  requireRole(['SUPER_ADMIN', 'ADMIN']),
+  AcademicEligibilityController.triggerSeed
+);
+
+// ============================================================================
+// PREMIUM RESEARCH, EDUCATION BLOG & SUPER ADMIN CONTENT PLATFORM (SECTION 15)
+// ============================================================================
+
+// Public Content & Blog APIs
+router.get('/blog/articles', ContentPlatformController.getArticles);
+router.get('/blog/articles/:slug', ContentPlatformController.getArticleBySlug);
+router.get('/blog/categories', ContentPlatformController.getCategories);
+router.get('/blog/authors', ContentPlatformController.getAuthors);
+router.get('/blog/authors/:slug', ContentPlatformController.getAuthorBySlug);
+router.get('/research/papers', ContentPlatformController.getResearchPapers);
+router.get('/research/papers/:slug', ContentPlatformController.getResearchPaperBySlug);
+router.get('/compare/universities', ContentPlatformController.getUniversityComparisons);
+router.get('/compare/countries', ContentPlatformController.getCountryComparisons);
+
+// User Bookmarks & Reader Corrections
+router.post('/blog/bookmarks/:articleId', authenticateToken, ContentPlatformController.toggleArticleBookmark);
+router.get('/blog/bookmarks', authenticateToken, ContentPlatformController.getUserBookmarks);
+router.get('/blog/bookmarks/check/:articleId', optionalAuth, ContentPlatformController.checkIsBookmarked);
+router.post('/blog/corrections', optionalAuth, ContentPlatformController.submitCorrectionReport);
+
+// Super Admin Content Studio APIs
+router.get(
+  '/admin/content/overview',
+  authenticateToken,
+  requireRole(['SUPER_ADMIN', 'ADMIN']),
+  ContentPlatformController.adminGetContentOverview
+);
+
+router.get(
+  '/admin/content/articles',
+  authenticateToken,
+  requireRole(['SUPER_ADMIN', 'ADMIN']),
+  ContentPlatformController.getArticles
+);
+
+router.post(
+  '/admin/content/articles',
+  authenticateToken,
+  requireRole(['SUPER_ADMIN', 'ADMIN']),
+  ContentPlatformController.adminSaveArticle
+);
+
+router.post(
+  '/admin/content/articles/:id/review',
+  authenticateToken,
+  requireRole(['SUPER_ADMIN', 'ADMIN']),
+  ContentPlatformController.adminReviewArticle
+);
+
+router.post(
+  '/admin/content/ai-draft',
+  authenticateToken,
+  requireRole(['SUPER_ADMIN', 'ADMIN']),
+  ContentPlatformController.adminGenerateAiDraft
+);
+
+router.post(
+  '/admin/content/sources/verify',
+  authenticateToken,
+  requireRole(['SUPER_ADMIN', 'ADMIN']),
+  ContentPlatformController.adminVerifySources
+);
+
+router.get(
+  '/admin/content/corrections',
+  authenticateToken,
+  requireRole(['SUPER_ADMIN', 'ADMIN']),
+  ContentPlatformController.adminGetCorrectionReports
+);
+
+router.post(
+  '/admin/content/corrections/:id/resolve',
+  authenticateToken,
+  requireRole(['SUPER_ADMIN', 'ADMIN']),
+  ContentPlatformController.adminResolveCorrection
+);
+
+router.post(
+  '/admin/content/seed',
+  authenticateToken,
+  requireRole(['SUPER_ADMIN', 'ADMIN']),
+  ContentPlatformController.adminSeedContentPlatform
+);
+
+// ============================================================================
+// 16. SUPER ADMIN LINK HEALTH, AUDIT & AUTOMATED REPAIR APIS
+// ============================================================================
+router.get(
+  '/admin/link-health/stats',
+  authenticateToken,
+  requireRole(['SUPER_ADMIN', 'ADMIN']),
+  linkHealthController.getStats
+);
+
+router.get(
+  '/admin/link-health/records',
+  authenticateToken,
+  requireRole(['SUPER_ADMIN', 'ADMIN']),
+  linkHealthController.getRecords
+);
+
+router.post(
+  '/admin/link-health/scan',
+  authenticateToken,
+  requireRole(['SUPER_ADMIN', 'ADMIN']),
+  linkHealthController.runScan
+);
+
+router.post(
+  '/admin/link-health/repair',
+  authenticateToken,
+  requireRole(['SUPER_ADMIN', 'ADMIN']),
+  linkHealthController.applyRepair
+);
+
+router.post(
+  '/admin/link-health/auto-repair',
+  authenticateToken,
+  requireRole(['SUPER_ADMIN', 'ADMIN']),
+  linkHealthController.autoRepairBatch
+);
+
+router.post(
+  '/admin/link-health/reject',
+  authenticateToken,
+  requireRole(['SUPER_ADMIN', 'ADMIN']),
+  linkHealthController.rejectRepair
+);
+
+router.post(
+  '/admin/link-health/retry',
+  authenticateToken,
+  requireRole(['SUPER_ADMIN', 'ADMIN']),
+  linkHealthController.retryLink
+);
+
+router.post(
+  '/admin/link-health/candidate',
+  authenticateToken,
+  requireRole(['SUPER_ADMIN', 'ADMIN']),
+  linkHealthController.updateCandidate
+);
+
+router.get(
+  '/admin/link-health/export-csv',
+  authenticateToken,
+  requireRole(['SUPER_ADMIN', 'ADMIN']),
+  linkHealthController.exportCsv
+);
+
+router.get(
+  '/admin/link-health/history',
+  authenticateToken,
+  requireRole(['SUPER_ADMIN', 'ADMIN']),
+  linkHealthController.getHistory
+);
+
+// ============================================================================
+// 17. CAREER TOOLKIT, CV WRITING, EUROPASS & RESUME ROUTES
+// ============================================================================
+
+router.get('/career-toolkit/research-records', careerToolkitController.getResearchRecords);
+router.get('/career-toolkit/cv-examples', careerToolkitController.getCVExamples);
+router.get('/career-toolkit/cv-examples/:slug', careerToolkitController.getCVExampleBySlug);
+router.get('/career-toolkit/guides', careerToolkitController.getGuides);
+router.get('/career-toolkit/guides/:slug', careerToolkitController.getGuideBySlug);
+router.get('/career-toolkit/before-after', careerToolkitController.getBeforeAfterExamples);
+router.get('/career-toolkit/checklist', careerToolkitController.getChecklist);
+router.get('/career-toolkit/checklist/progress', optionalAuth, careerToolkitController.getChecklistProgress);
+router.post('/career-toolkit/checklist/progress', optionalAuth, careerToolkitController.saveChecklistProgress);
+router.post('/career-toolkit/review', careerToolkitController.runQualityReview);
+router.post('/career-toolkit/seed', careerToolkitController.triggerSeed);
+
+router.get('/career-toolkit/drafts', authenticateToken, careerToolkitController.getUserDrafts);
+router.get('/career-toolkit/drafts/:id', optionalAuth, careerToolkitController.getDraftById);
+router.post('/career-toolkit/drafts', optionalAuth, careerToolkitController.saveDraft);
+router.delete('/career-toolkit/drafts/:id', authenticateToken, careerToolkitController.deleteDraft);
+
+router.post(
+  '/admin/career-toolkit/research-records',
+  authenticateToken,
+  requireRole(['SUPER_ADMIN', 'ADMIN']),
+  careerToolkitController.adminCreateResearchRecord
+);
+router.put(
+  '/admin/career-toolkit/research-records/:id',
+  authenticateToken,
+  requireRole(['SUPER_ADMIN', 'ADMIN']),
+  careerToolkitController.adminUpdateResearchRecord
+);
+router.delete(
+  '/admin/career-toolkit/research-records/:id',
+  authenticateToken,
+  requireRole(['SUPER_ADMIN', 'ADMIN']),
+  careerToolkitController.adminDeleteResearchRecord
+);
+
+// ============================================================================
+// 18. COUNTRY WORK & CAREER GUIDE SUBSYSTEM
+// ============================================================================
+
+router.get('/country-work-guide', (req, res) => countryWorkGuideController.getGlobalOverview(req, res));
+router.get('/country-work-guide/compare', (req, res) => countryWorkGuideController.getSideBySideComparison(req, res));
+router.get('/country-work-guide/minimum-wages', (req, res) => countryWorkGuideController.getMinimumWages(req, res));
+router.get('/country-work-guide/student-work-rules', (req, res) => countryWorkGuideController.getStudentWorkRules(req, res));
+router.get('/country-work-guide/post-study-work', (req, res) => countryWorkGuideController.getPostStudyWorkRoutes(req, res));
+router.get('/country-work-guide/career-roadmaps', (req, res) => countryWorkGuideController.getCareerRoadmaps(req, res));
+router.get('/country-work-guide/sources', (req, res) => countryWorkGuideController.getOfficialSources(req, res));
+router.get('/country-work-guide/profile/:codeOrSlug', (req, res) => countryWorkGuideController.getCountryProfile(req, res));
+router.post('/country-work-guide/planner', (req, res) => countryWorkGuideController.generatePersonalizedPlan(req, res));
+router.post('/country-work-guide/corrections', optionalAuth, (req, res) => countryWorkGuideController.submitCorrectionReport(req, res));
+
+// Admin routes
+router.post(
+  '/admin/country-work-guide/verify',
+  authenticateToken,
+  requireRole(['SUPER_ADMIN', 'ADMIN']),
+  (req, res) => countryWorkGuideController.verifyPolicy(req, res)
+);
+router.get(
+  '/admin/country-work-guide/corrections',
+  authenticateToken,
+  requireRole(['SUPER_ADMIN', 'ADMIN']),
+  (req, res) => countryWorkGuideController.getCorrectionReports(req, res)
+);
+router.patch(
+  '/admin/country-work-guide/corrections/:id',
+  authenticateToken,
+  requireRole(['SUPER_ADMIN', 'ADMIN']),
+  (req, res) => countryWorkGuideController.reviewCorrectionReport(req, res)
+);
+
 export default router;
+
 

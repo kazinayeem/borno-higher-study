@@ -321,7 +321,7 @@ export const AdminReportsManager: React.FC = () => {
 
               {/* Title & Description */}
               <div className="mt-3">
-                <h3 className="text-base font-bold text-navy-950 font-serif">
+                <h3 className="text-base font-heading font-semibold text-brand-navy">
                   {report.entityName}
                 </h3>
                 <p className="text-xs text-slate-600 mt-1">
@@ -412,7 +412,7 @@ export const AdminReportsManager: React.FC = () => {
                 <span className="p-2 rounded-lg bg-teal-50 text-teal-700">
                   <ShieldAlert className="w-5 h-5" />
                 </span>
-                <h3 className="text-lg font-bold text-navy-950 font-serif">
+                <h3 className="text-lg font-heading font-semibold text-brand-navy tracking-tight">
                   {reviewDecision === 'APPROVE' && 'Confirm & Publish Public Correction'}
                   {reviewDecision === 'REQUEST_MORE_INFO' && 'Request Additional Evidence'}
                   {reviewDecision === 'MARK_DISPUTED' && 'Mark Public Record as Disputed'}

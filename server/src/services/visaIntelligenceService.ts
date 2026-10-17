@@ -332,8 +332,11 @@ export class VisaIntelligenceService {
     const now = new Date();
     const statistics = rawStatistics.map((stat) => {
       const daysSince = Math.floor((now.getTime() - new Date(stat.lastVerifiedAt).getTime()) / (1000 * 60 * 60 * 24));
+      const status = stat.dataCredibility === 'OFFICIAL_PUBLISHED' ? 'OFFICIAL' : stat.dataCredibility;
       return {
         ...stat,
+        dataStatus: status,
+        publisher: stat.sources?.[0]?.publisher || 'National Immigration Department',
         isOutdated: daysSince > 180 || stat.isOutdated,
         daysSinceVerification: daysSince,
       };
@@ -429,17 +432,36 @@ export class VisaIntelligenceService {
       }),
     ]);
 
-    // Separate Bangladeshi stats from Worldwide stats
-    const bangladeshStats = stats.filter((s) => s.applicantNationality === 'BANGLADESH');
-    const worldwideStats = stats.filter((s) => s.applicantNationality === 'WORLDWIDE_ALL');
+    // Map stats with dataStatus and publisher
+    const mappedStats = stats.map((stat) => ({
+      ...stat,
+      dataStatus: stat.dataCredibility === 'OFFICIAL_PUBLISHED' ? 'OFFICIAL' : stat.dataCredibility,
+      publisher: stat.sources?.[0]?.publisher || 'National Immigration Department',
+    }));
+
+    // Map centres with mustTravelToIndia alias
+    const mappedCentres = centres.map((c) => ({
+      ...c,
+      mustTravelToIndia: c.indiaTravelRequirement,
+      serviceProvider: c.providerName,
+      officialEmbassyHandling: c.embassyHandling,
+      requiresAppointment: c.appointmentRequired,
+      requiresBiometrics: c.biometricsRequired,
+      requiresInterview: c.interviewRequired,
+      courierReturnAvailable: c.passportReturnAvailableInBd,
+      appointmentUrl: c.officialBookingUrl,
+    }));
 
     return {
       country,
-      bangladeshStats,
-      worldwideStats,
-      centres,
+      statistics: mappedStats,
+      bangladeshStats: mappedStats.filter((s) => s.applicantNationality === 'BANGLADESH'),
+      worldwideStats: mappedStats.filter((s) => s.applicantNationality === 'WORLDWIDE_ALL'),
+      centres: mappedCentres,
+      applicationCentres: mappedCentres,
       policies,
       updates,
+      socialUpdates: updates,
     };
   }
 
@@ -491,9 +513,25 @@ export class VisaIntelligenceService {
       unknown: centres.filter((c) => c.indiaTravelRequirement === 'UNKNOWN').length,
     };
 
+    const mappedCentres = centres.map((c) => ({
+      ...c,
+      destinationCountryName: c.countryName,
+      destinationCountryCode: c.countryCode,
+      mustTravelToIndia: c.indiaTravelRequirement,
+      serviceProvider: c.providerName,
+      officialEmbassyHandling: c.embassyHandling,
+      requiresAppointment: c.appointmentRequired,
+      requiresBiometrics: c.biometricsRequired,
+      requiresInterview: c.interviewRequired,
+      inPersonPassportSubmission: c.inPersonPassportSubmission,
+      courierReturnAvailable: c.passportReturnAvailableInBd,
+      appointmentUrl: c.officialBookingUrl,
+      status: 'OPERATIONAL',
+    }));
+
     return {
-      centres,
-      total: centres.length,
+      centres: mappedCentres,
+      total: mappedCentres.length,
       travelCounts,
     };
   }
@@ -527,19 +565,40 @@ export class VisaIntelligenceService {
       };
     }
 
+    const mappedCentre = {
+      ...centre,
+      destinationCountryName: centre.countryName,
+      destinationCountryCode: centre.countryCode,
+      mustTravelToIndia: centre.indiaTravelRequirement,
+      serviceProvider: centre.providerName,
+      officialEmbassyHandling: centre.embassyHandling,
+      requiresAppointment: centre.appointmentRequired,
+      requiresBiometrics: centre.biometricsRequired,
+      requiresInterview: centre.interviewRequired,
+      inPersonPassportSubmission: centre.inPersonPassportSubmission,
+      courierReturnAvailable: centre.passportReturnAvailableInBd,
+      appointmentUrl: centre.officialBookingUrl,
+      status: 'OPERATIONAL',
+    };
+
+    const guidance =
+      centre.indiaTravelRequirement === 'YES'
+        ? `ATTENTION: Applicants applying from Bangladesh for ${centre.countryName} MUST travel to ${centre.city}, ${centre.country}. ${centre.indiaTravelReason}`
+        : centre.indiaTravelRequirement === 'POSSIBLY'
+        ? `NOTE: In-country submission in Bangladesh is conditionally available, but limited appointment quotas in Dhaka may necessitate travel to India. ${centre.indiaTravelReason}`
+        : `CONFIRMED: Full in-country submission is available in Bangladesh at ${centre.centreName}. No travel to India is required.`;
+
     return {
       found: true,
-      centre,
+      centre: mappedCentre,
+      centres: [mappedCentre],
       mustTravelToIndia: centre.indiaTravelRequirement,
+      reason: centre.indiaTravelReason || 'Consular jurisdiction policy',
       indiaTravelReason: centre.indiaTravelReason || null,
+      recommendation: guidance,
       submissionInBangladesh: centre.submissionInBangladesh,
       officialBookingUrl: centre.officialBookingUrl,
-      guidanceSummary:
-        centre.indiaTravelRequirement === 'YES'
-          ? `ATTENTION: Applicants applying from Bangladesh for ${centre.countryName} MUST travel to ${centre.city}, ${centre.country}. ${centre.indiaTravelReason}`
-          : centre.indiaTravelRequirement === 'POSSIBLY'
-          ? `NOTE: In-country submission in Bangladesh is conditionally available, but limited appointment quotas in Dhaka may necessitate travel to India. ${centre.indiaTravelReason}`
-          : `CONFIRMED: Full in-country submission is available in Bangladesh at ${centre.centreName}. No travel to India is required.`,
+      guidanceSummary: guidance,
     };
   }
 
@@ -593,36 +652,58 @@ export class VisaIntelligenceService {
 
     // 2. Perform Curated Official Index Search
     // Matches against official policies, statistics, centres, and primary government domains
+    const terms = query.toLowerCase().split(/\s+/).filter((t) => t.length > 1);
+    const countryAliases: Record<string, string> = {
+      uk: 'United Kingdom',
+      britain: 'United Kingdom',
+      us: 'United States',
+      usa: 'United States',
+      america: 'United States',
+      ca: 'Canada',
+      au: 'Australia',
+      nz: 'New Zealand',
+      de: 'Germany',
+      ie: 'Ireland',
+      se: 'Sweden',
+      fi: 'Finland',
+      lt: 'Lithuania',
+      pt: 'Portugal',
+      pl: 'Poland',
+    };
+
+    const statsClauses: any[] = [{ countryName: { contains: query } }, { notes: { contains: query } }];
+    const centreClauses: any[] = [{ countryName: { contains: query } }, { centreName: { contains: query } }, { address: { contains: query } }];
+    const policyClauses: any[] = [{ title: { contains: query } }, { summary: { contains: query } }];
+
+    for (const term of terms) {
+      statsClauses.push({ countryName: { contains: term } });
+      statsClauses.push({ notes: { contains: term } });
+      statsClauses.push({ visaCategory: { contains: term } });
+
+      centreClauses.push({ countryName: { contains: term } });
+      centreClauses.push({ centreName: { contains: term } });
+      centreClauses.push({ city: { contains: term } });
+
+      policyClauses.push({ title: { contains: term } });
+      policyClauses.push({ summary: { contains: term } });
+
+      if (countryAliases[term]) {
+        statsClauses.push({ countryName: { contains: countryAliases[term] } });
+        centreClauses.push({ countryName: { contains: countryAliases[term] } });
+      }
+    }
+
     const [matchedStats, matchedCentres, matchedPolicies, matchedUpdates] = await Promise.all([
       prisma.visaStatistics.findMany({
-        where: {
-          OR: [
-            { countryName: { contains: query } },
-            { visaCategory: { contains: query } },
-            { notes: { contains: query } },
-          ],
-        },
-        take: 5,
+        where: { OR: statsClauses },
+        take: 6,
       }),
       prisma.visaApplicationCentre.findMany({
-        where: {
-          OR: [
-            { countryName: { contains: query } },
-            { centreName: { contains: query } },
-            { address: { contains: query } },
-            { embassyHandling: { contains: query } },
-          ],
-        },
+        where: { OR: centreClauses },
         take: 5,
       }),
       prisma.visaPolicy.findMany({
-        where: {
-          OR: [
-            { title: { contains: query } },
-            { summary: { contains: query } },
-            { financialProofRequired: { contains: query } },
-          ],
-        },
+        where: { OR: policyClauses },
         take: 5,
       }),
       prisma.socialUpdate.findMany({
@@ -631,13 +712,22 @@ export class VisaIntelligenceService {
             { summary: { contains: query } },
             { publisher: { contains: query } },
             { topic: { contains: query } },
+            ...terms.map((t) => ({ summary: { contains: t } })),
           ],
         },
-        take: 5,
+        take: 4,
       }),
     ]);
 
     const results: any[] = [];
+
+    const getDomain = (urlStr: string) => {
+      try {
+        return new URL(urlStr).hostname.replace('www.', '');
+      } catch {
+        return 'gov-portal.org';
+      }
+    };
 
     // Transform Statistics matches
     for (const s of matchedStats) {
@@ -646,9 +736,11 @@ export class VisaIntelligenceService {
         snippet: `Official approval rate: ${s.approvalRate !== null ? `${s.approvalRate}%` : 'Unavailable'}. ${s.calculationBasis || s.notes}`,
         url: s.officialSourceUrl,
         publisher: 'Official Government Immigration Release',
+        domain: getDomain(s.officialSourceUrl),
         isOfficialDomain: true,
         sourceType: 'GOVERNMENT_STATISTICS',
         reportingPeriod: s.reportingPeriod,
+        destinationCountryCode: s.countryCode,
         verifiedDate: s.lastVerifiedAt,
       });
     }
@@ -660,8 +752,10 @@ export class VisaIntelligenceService {
         snippet: `Location: ${c.city}, ${c.country}. Must travel to India: ${c.indiaTravelRequirement}. ${c.indiaTravelReason || 'Direct submission available in Bangladesh.'}`,
         url: c.officialBookingUrl,
         publisher: c.embassyHandling,
+        domain: getDomain(c.officialBookingUrl),
         isOfficialDomain: true,
         sourceType: 'VISA_APPLICATION_CENTRE',
+        destinationCountryCode: c.countryCode,
         verifiedDate: c.lastVerifiedAt,
       });
     }
@@ -673,6 +767,7 @@ export class VisaIntelligenceService {
         snippet: `${p.summary} Maintenance requirement: ${p.financialProofRequired || 'Contact official portal'}.`,
         url: p.officialChecklistUrl,
         publisher: 'Immigration Authority Policy Guidance',
+        domain: getDomain(p.officialChecklistUrl),
         isOfficialDomain: true,
         sourceType: 'IMMIGRATION_POLICY',
         verifiedDate: p.lastVerifiedAt,
@@ -686,6 +781,7 @@ export class VisaIntelligenceService {
         snippet: u.summary,
         url: u.originalPostUrl,
         publisher: u.publisher,
+        domain: getDomain(u.originalPostUrl),
         isOfficialDomain: true,
         sourceType: 'OFFICIAL_ANNOUNCEMENT',
         verifiedDate: u.publishedAt,
