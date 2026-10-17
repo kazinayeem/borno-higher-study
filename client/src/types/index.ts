@@ -131,3 +131,48 @@ export interface UserProfile {
   targetCountry?: string;
   targetDegree?: string;
 }
+
+export type TestType = 'IELTS' | 'TOEFL' | 'PTE' | 'SPOKEN_ENGLISH';
+export type LearningMode = 'OFFLINE' | 'ONLINE' | 'HYBRID';
+
+export interface EnglishCoachingCenter {
+  id: string;
+  name: string;
+  slug: string;
+  logoUrl?: string;
+  division: string;
+  district: string;
+  city: string;
+  area: string;
+  address: string;
+  testsOffered: TestType[];
+  modes: LearningMode[];
+  courseDuration: string;
+  feeRange: string;
+  feeAmountBdt?: number;
+  features: string[];
+  contactPhone: string;
+  contactEmail?: string;
+  websiteUrl?: string;
+  facebookUrl?: string;
+  rating: number;
+  reviewCount: number;
+  studentReviewSnippet: string;
+  verificationStatus: 'VERIFIED' | 'PENDING_REVIEW';
+  lastVerifiedAt: string;
+}
+
+export interface PracticeResource {
+  id: string;
+  title: string;
+  provider: string;
+  examType: 'IELTS' | 'TOEFL' | 'PTE' | 'ALL';
+  skillsCovered: ('Listening' | 'Reading' | 'Writing' | 'Speaking')[];
+  freeFeatures: string[];
+  paidFeatures?: string[];
+  accountRequired: boolean;
+  officialUrl: string;
+  isOfficialProvider: boolean;
+  badgeText: string;
+  description: string;
+}

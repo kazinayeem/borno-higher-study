@@ -108,6 +108,12 @@ export const Navbar: React.FC = () => {
       desc: 'IELTS, TOEFL & PTE eligibility',
     },
     {
+      name: 'Test Preparation Hub',
+      path: '/test-prep',
+      icon: BookOpen,
+      desc: 'Bangladesh coaching centers & free practice',
+    },
+    {
       name: 'University Compare',
       path: '/compare',
       icon: Scale,
@@ -124,6 +130,7 @@ export const Navbar: React.FC = () => {
   const isToolsActive =
     isActive('/calculator') ||
     isActive('/english-checker') ||
+    isActive('/test-prep') ||
     isActive('/compare') ||
     isActive('/planner');
 

@@ -38,6 +38,12 @@ export const Footer: React.FC = () => {
                 </Link>
               </li>
               <li>
+                <Link to="/test-prep" className="hover:text-teal-400 transition-colors flex items-center gap-1.5">
+                  <span>English Test Prep Hub</span>
+                  <span className="bg-amber-900/80 text-amber-300 text-[10px] px-1.5 py-0.5 rounded font-bold">New</span>
+                </Link>
+              </li>
+              <li>
                 <Link to="/advisor" className="hover:text-teal-400 transition-colors flex items-center gap-1.5">
                   <span>Borno Study Advisor</span>
                   <span className="bg-teal-900/80 text-teal-300 text-[10px] px-1.5 py-0.5 rounded font-bold">AI</span>

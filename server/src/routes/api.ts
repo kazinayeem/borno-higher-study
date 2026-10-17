@@ -24,6 +24,7 @@ import {
 } from '../controllers/adminController.js';
 import { authenticateToken, requireRole } from '../middleware/authMiddleware.js';
 import { SUBJECTS_DATA } from '../data/subjectsData.js';
+import { ENGLISH_COACHING_CENTERS, OFFICIAL_PRACTICE_RESOURCES } from '../data/englishPrepData.js';
 
 const router = Router();
 
@@ -43,6 +44,41 @@ router.get('/subjects', (req, res) => {
 
 router.get('/scholarships', getScholarships);
 router.get('/scholarships/:id', getScholarshipById);
+
+// English Test Preparation Hub (Coaching Centers & Official Resources)
+router.get('/prep/coaching-centers', (req, res) => {
+  const { testType, district, mode, search } = req.query;
+  let results = [...ENGLISH_COACHING_CENTERS];
+
+  if (testType && typeof testType === 'string' && testType !== 'all') {
+    results = results.filter((c) => c.testsOffered.includes(testType.toUpperCase()));
+  }
+  if (district && typeof district === 'string' && district !== 'all') {
+    results = results.filter((c) => c.district.toLowerCase() === district.toLowerCase() || c.city.toLowerCase() === district.toLowerCase());
+  }
+  if (mode && typeof mode === 'string' && mode !== 'all') {
+    results = results.filter((c) => c.modes.includes(mode.toUpperCase()));
+  }
+  if (search && typeof search === 'string') {
+    const q = search.toLowerCase();
+    results = results.filter((c) =>
+      c.name.toLowerCase().includes(q) ||
+      c.area.toLowerCase().includes(q) ||
+      c.city.toLowerCase().includes(q)
+    );
+  }
+
+  return res.json({ total: results.length, coachingCenters: results });
+});
+
+router.get('/prep/resources', (req, res) => {
+  const { examType } = req.query;
+  let results = [...OFFICIAL_PRACTICE_RESOURCES];
+  if (examType && typeof examType === 'string' && examType !== 'all') {
+    results = results.filter((r) => r.examType === examType.toUpperCase() || r.examType === 'ALL');
+  }
+  return res.json({ total: results.length, resources: results });
+});
 
 // Interactive Tools
 router.post('/calculator/calculate', calculateCost);

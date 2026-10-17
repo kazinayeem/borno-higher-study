@@ -55,6 +55,7 @@ export const getMainSitemap = (req: Request, res: Response) => {
     { path: '/scholarships', priority: '0.9', changefreq: 'daily' },
     { path: '/calculator', priority: '0.8', changefreq: 'monthly' },
     { path: '/english-checker', priority: '0.8', changefreq: 'monthly' },
+    { path: '/test-prep', priority: '0.8', changefreq: 'weekly' },
     { path: '/advisor', priority: '0.8', changefreq: 'weekly' },
     { path: '/about', priority: '0.6', changefreq: 'monthly' },
     { path: '/contact', priority: '0.6', changefreq: 'monthly' },

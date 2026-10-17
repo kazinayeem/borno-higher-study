@@ -20,6 +20,7 @@ import { ScholarshipsPage } from './pages/ScholarshipsPage.js';
 import { ScholarshipDetailsPage } from './pages/ScholarshipDetailsPage.js';
 import { TuitionCalculatorPage } from './pages/TuitionCalculatorPage.js';
 import { EnglishCheckerPage } from './pages/EnglishCheckerPage.js';
+import { EnglishPrepPage } from './pages/EnglishPrepPage.js';
 import { AiAdvisorPage } from './pages/AiAdvisorPage.js';
 import { ComparePage } from './pages/ComparePage.js';
 import { SavedItemsPage } from './pages/SavedItemsPage.js';
@@ -63,6 +64,8 @@ export const App: React.FC = () => {
                   {/* Interactive Tools */}
                   <Route path="/calculator" element={<TuitionCalculatorPage />} />
                   <Route path="/english-checker" element={<EnglishCheckerPage />} />
+                  <Route path="/test-prep" element={<EnglishPrepPage />} />
+                  <Route path="/preparation" element={<Navigate to="/test-prep" replace />} />
                   <Route path="/advisor" element={<AiAdvisorPage />} />
                   <Route path="/compare" element={<ComparePage />} />
                   <Route path="/saved" element={<SavedItemsPage />} />
