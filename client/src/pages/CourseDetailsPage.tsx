@@ -14,9 +14,12 @@ import {
   CheckCircle2,
   ArrowLeft,
   FileCheck,
+  Flag,
 } from 'lucide-react';
 import { SeoHead } from '../components/common/SeoHead.js';
 import { Breadcrumbs } from '../components/common/Breadcrumbs.js';
+import { DeadlinesPanel } from '../components/common/DeadlinesPanel.js';
+import { ReportCorrectionModal } from '../components/common/ReportCorrectionModal.js';
 
 export const CourseDetailsPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -26,6 +29,9 @@ export const CourseDetailsPage: React.FC = () => {
     scholarships: Scholarship[];
   } | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isReportModalOpen, setIsReportModalOpen] = useState(false);
+  const [reportField, setReportField] = useState('OTHER');
+  const [reportCurrentValue, setReportCurrentValue] = useState('');
 
   useEffect(() => {
     if (id) {
@@ -152,8 +158,29 @@ export const CourseDetailsPage: React.FC = () => {
             >
               Estimate Total Study Budget in BDT
             </Link>
+
+            <button
+              type="button"
+              onClick={() => {
+                setReportField('OTHER');
+                setReportCurrentValue('');
+                setIsReportModalOpen(true);
+              }}
+              className="px-4 py-3 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 hover:text-rose-600 text-xs font-semibold transition-colors inline-flex items-center gap-1.5"
+            >
+              <Flag className="w-3.5 h-3.5 text-slate-400" />
+              <span>Report Incorrect Information</span>
+            </button>
           </div>
         </div>
+
+        {/* Course Specific Deadlines Panel */}
+        <DeadlinesPanel
+          programId={program.id}
+          entityName={program.name}
+          entitySlug={program.slug}
+          entityType="PROGRAM"
+        />
 
         {/* Requirements Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -199,6 +226,17 @@ export const CourseDetailsPage: React.FC = () => {
           </div>
         )}
       </div>
+
+      <ReportCorrectionModal
+        isOpen={isReportModalOpen}
+        onClose={() => setIsReportModalOpen(false)}
+        entityType="PROGRAM"
+        entityId={program.id}
+        entityName={`${program.name} (${program.degreeLevel})`}
+        entitySlug={program.slug}
+        defaultField={reportField}
+        currentValue={reportCurrentValue}
+      />
     </div>
   );
 };

@@ -36,9 +36,16 @@ export const UniversityCard: React.FC<UniversityCardProps> = ({ university }) =>
         {/* Top Badges & Actions */}
         <div className="flex items-start justify-between gap-3 mb-3">
           <div className="flex flex-wrap items-center gap-1.5">
-            <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-slate-100 text-slate-700">
-              {university.type}
+            <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-slate-900 text-white">
+              {(university as any).institutionType
+                ? (university as any).institutionType.replace(/_/g, ' ')
+                : university.type}
             </span>
+            {(university as any).accreditationBody && (
+              <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-teal-50 text-teal-800 border border-teal-200">
+                {(university as any).accreditationBody.split('/')[0].trim()}
+              </span>
+            )}
             {university.qsRanking && (
               <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-amber-50 text-amber-800 border border-amber-200/60 flex items-center gap-1">
                 <Award className="w-3 h-3 text-amber-600" />

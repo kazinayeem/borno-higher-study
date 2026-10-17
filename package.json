@@ -11,8 +11,13 @@
     "build:client": "npm --prefix client run build",
     "build:server": "npm --prefix server run build",
     "build": "npm run build:client && npm run build:server",
-    "db:push": "npm --prefix server run prisma:generate && npx --prefix server prisma db push",
-    "db:seed": "npm --prefix server run prisma:seed"
+    "db:push": "npm --prefix server run prisma:generate && npm --prefix server run prisma:push",
+    "db:seed": "npm --prefix server run prisma:seed",
+    "test:auth": "npx tsx scripts/verifyAuthSystem.ts",
+    "test:coverage": "npx tsx scripts/verifyInstitutionCoverage.ts",
+    "test:english-tests": "npx tsx scripts/verifyEnglishTestModule.ts",
+    "test:moi": "npx tsx scripts/verifyMoiSystem.ts",
+    "test:seo": "npx tsx scripts/seoAudit.ts"
   },
   "keywords": [
     "study-abroad",

@@ -168,10 +168,51 @@ export const HomePage: React.FC = () => {
               Explore universities worldwide, compare degree programs, discover scholarships, and plan your international education journey in one place.
             </p>
 
+            {/* Two Visually Distinct Active Login Portals */}
+            <div className="pt-2 pb-1 flex flex-col sm:flex-row items-center justify-center gap-3.5 max-w-xl mx-auto">
+              {/* Button 1: Super Admin Login */}
+              <Link
+                to="/super-admin/login"
+                className="w-full sm:w-1/2 group relative p-3.5 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white border border-slate-700 shadow-md hover:shadow-lg transition-all text-left flex items-center gap-3"
+              >
+                <div className="w-10 h-10 rounded-xl bg-slate-800 group-hover:bg-teal-900/50 text-teal-400 flex items-center justify-center shrink-0 border border-slate-700 transition-colors">
+                  <ShieldCheck className="w-5 h-5" />
+                </div>
+                <div className="min-w-0">
+                  <span className="block text-[11px] font-black tracking-wider uppercase text-teal-400">
+                    Governance Portal
+                  </span>
+                  <span className="block text-sm font-bold text-white leading-tight">
+                    Super Admin Login
+                  </span>
+                </div>
+                <ArrowRight className="w-4 h-4 text-slate-400 group-hover:text-teal-400 ml-auto transition-transform group-hover:translate-x-0.5 shrink-0" />
+              </Link>
+
+              {/* Button 2: Student Login */}
+              <Link
+                to="/student/login"
+                className="w-full sm:w-1/2 group relative p-3.5 rounded-2xl bg-teal-600 hover:bg-teal-700 text-white border border-teal-500 shadow-md hover:shadow-lg transition-all text-left flex items-center gap-3"
+              >
+                <div className="w-10 h-10 rounded-xl bg-teal-700/80 group-hover:bg-teal-800 text-white flex items-center justify-center shrink-0 border border-teal-400/40 transition-colors">
+                  <GraduationCap className="w-5 h-5" />
+                </div>
+                <div className="min-w-0">
+                  <span className="block text-[11px] font-black tracking-wider uppercase text-teal-100">
+                    Applicants & Contributor
+                  </span>
+                  <span className="block text-sm font-bold text-white leading-tight">
+                    Student Login
+                  </span>
+                </div>
+                <ArrowRight className="w-4 h-4 text-teal-200 group-hover:text-white ml-auto transition-transform group-hover:translate-x-0.5 shrink-0" />
+              </Link>
+            </div>
+
             {/* Global Search Bar */}
             <form
               onSubmit={handleHeroSearch}
-              className="mt-8 bg-white rounded-2xl p-3 shadow-card border border-slate-200 text-slate-800 text-left space-y-3"
+              className="mt-6 bg-white rounded-2xl p-3 shadow-card border border-slate-200 text-slate-800 text-left space-y-3"
             >
               <div className="flex flex-col sm:flex-row items-center gap-2">
                 <div className="flex-1 flex items-center gap-3 px-3 py-2 w-full">

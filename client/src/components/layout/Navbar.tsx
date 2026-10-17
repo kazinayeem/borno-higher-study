@@ -21,6 +21,13 @@ import {
   LogOut,
   Calendar,
   ChevronDown,
+  Users,
+  FileLock2,
+  PenSquare,
+  Flag,
+  Building2,
+  Compass,
+  FileText,
 } from 'lucide-react';
 
 export const Navbar: React.FC = () => {
@@ -88,13 +95,44 @@ export const Navbar: React.FC = () => {
   // Core navigation items
   const primaryLinks = [
     { name: 'Countries', path: '/countries', icon: Globe },
-    { name: 'Universities', path: '/universities', icon: GraduationCap },
+    { name: 'Institutions', path: '/universities', icon: GraduationCap },
     { name: 'Courses', path: '/courses', icon: BookOpen },
     { name: 'Scholarships', path: '/scholarships', icon: Award },
+    { name: 'Community', path: '/community', icon: Users },
   ];
 
   // Expanded tool items
   const toolLinks = [
+    {
+      name: 'English Tests & Fees',
+      path: '/english-tests',
+      icon: Award,
+      desc: 'IELTS, PTE & TOEFL fees, formats & turnaround',
+    },
+    {
+      name: 'University Test Acceptance',
+      path: '/university-test-acceptance',
+      icon: Building2,
+      desc: 'Verify course & university test score rules',
+    },
+    {
+      name: 'English Test Advisor',
+      path: '/english-test-advisor',
+      icon: Compass,
+      desc: 'Find the best test for your shortlisted universities',
+    },
+    {
+      name: 'MOI Acceptance Directory',
+      path: '/moi-acceptance',
+      icon: FileText,
+      desc: 'Medium of Instruction university policies & exemptions',
+    },
+    {
+      name: 'MOI Eligibility Checker',
+      path: '/moi-eligibility-checker',
+      icon: Sparkles,
+      desc: 'Interactive questionnaire to check waiver eligibility',
+    },
     {
       name: 'Cost Calculator',
       path: '/calculator',
@@ -125,14 +163,31 @@ export const Navbar: React.FC = () => {
       icon: Calendar,
       desc: 'Study abroad checklist & timeline',
     },
+    {
+      name: 'Study Workspaces',
+      path: '/workspaces',
+      icon: Users,
+      desc: 'Shared study circles without password sharing',
+    },
+    {
+      name: 'Financial Vault',
+      path: '/dashboard/financial-documents',
+      icon: FileLock2,
+      desc: 'Confidential bank statement & solvency review',
+    },
   ];
 
   const isToolsActive =
+    isActive('/english-tests') ||
+    isActive('/university-test-acceptance') ||
+    isActive('/english-test-advisor') ||
     isActive('/calculator') ||
     isActive('/english-checker') ||
     isActive('/test-prep') ||
     isActive('/compare') ||
-    isActive('/planner');
+    isActive('/planner') ||
+    isActive('/workspaces') ||
+    isActive('/dashboard/financial-documents');
 
   return (
     <header
@@ -346,6 +401,42 @@ export const Navbar: React.FC = () => {
                       Student Dashboard
                     </Link>
 
+                    <Link
+                      to="/workspaces"
+                      onClick={() => setUserDropdownOpen(false)}
+                      className="flex items-center gap-2 px-4 py-2 text-xs text-slate-700 hover:bg-slate-50 font-medium"
+                    >
+                      <Users className="w-3.5 h-3.5 text-teal-600" />
+                      Study Workspaces
+                    </Link>
+
+                    <Link
+                      to="/dashboard/financial-documents"
+                      onClick={() => setUserDropdownOpen(false)}
+                      className="flex items-center gap-2 px-4 py-2 text-xs text-slate-700 hover:bg-slate-50 font-medium"
+                    >
+                      <FileLock2 className="w-3.5 h-3.5 text-slate-400" />
+                      Financial Documents
+                    </Link>
+
+                    <Link
+                      to="/dashboard/reports"
+                      onClick={() => setUserDropdownOpen(false)}
+                      className="flex items-center gap-2 px-4 py-2 text-xs text-slate-700 hover:bg-slate-50 font-medium"
+                    >
+                      <Flag className="w-3.5 h-3.5 text-slate-400" />
+                      My Factual Reports
+                    </Link>
+
+                    <Link
+                      to="/community/contribute"
+                      onClick={() => setUserDropdownOpen(false)}
+                      className="flex items-center gap-2 px-4 py-2 text-xs text-slate-700 hover:bg-slate-50 font-medium"
+                    >
+                      <PenSquare className="w-3.5 h-3.5 text-slate-400" />
+                      Contributor Studio
+                    </Link>
+
                     {isAdmin && (
                       <Link
                         to="/admin"
@@ -353,7 +444,7 @@ export const Navbar: React.FC = () => {
                         className="flex items-center gap-2 px-4 py-2 text-xs text-teal-700 hover:bg-teal-50 font-medium"
                       >
                         <Shield className="w-3.5 h-3.5 text-teal-600" />
-                        Admin Verification
+                        Admin Control Center
                       </Link>
                     )}
 
@@ -376,17 +467,19 @@ export const Navbar: React.FC = () => {
             ) : (
               <div className="flex items-center gap-2">
                 <Link
-                  to="/auth"
-                  className="h-9 px-3 flex items-center justify-center text-xs font-semibold text-slate-700 hover:text-slate-900 rounded-lg hover:bg-slate-100 transition-colors whitespace-nowrap"
+                  to="/super-admin/login"
+                  className="h-9 px-2.5 flex items-center gap-1.5 text-xs font-bold text-slate-700 hover:text-navy-950 hover:bg-slate-100 rounded-lg transition-colors whitespace-nowrap"
+                  title="Super Admin Governance Login"
                 >
-                  Sign In
+                  <Shield className="w-3.5 h-3.5 text-teal-600" />
+                  <span>Admin</span>
                 </Link>
                 <Link
-                  to="/universities"
-                  className="h-9 px-3.5 flex items-center justify-center text-xs font-bold text-white bg-slate-900 hover:bg-slate-800 rounded-lg shadow-xs transition-colors whitespace-nowrap"
+                  to="/student/login"
+                  className="h-9 px-3.5 flex items-center gap-1.5 text-xs font-bold text-white bg-teal-600 hover:bg-teal-700 rounded-lg shadow-xs transition-colors whitespace-nowrap"
                 >
-                  <span className="hidden 2xl:inline">Explore Universities</span>
-                  <span className="inline 2xl:hidden">Explore Now</span>
+                  <GraduationCap className="w-4 h-4" />
+                  <span>Student Login</span>
                 </Link>
               </div>
             )}
@@ -532,6 +625,13 @@ export const Navbar: React.FC = () => {
                 >
                   Student Dashboard ({user.name})
                 </Link>
+                <Link
+                  to="/dashboard/reports"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="w-full text-center py-2.5 rounded-lg text-sm font-semibold bg-white border border-slate-200 text-slate-700 hover:bg-slate-50"
+                >
+                  My Factual Reports
+                </Link>
                 {isAdmin && (
                   <Link
                     to="/admin"
@@ -555,18 +655,20 @@ export const Navbar: React.FC = () => {
             ) : (
               <>
                 <Link
-                  to="/universities"
+                  to="/student/login"
                   onClick={() => setMobileMenuOpen(false)}
-                  className="w-full text-center py-2.5 rounded-lg text-sm font-bold bg-slate-900 text-white shadow-xs hover:bg-slate-800"
+                  className="w-full text-center py-2.5 rounded-lg text-sm font-bold bg-teal-600 text-white shadow-xs hover:bg-teal-700 flex items-center justify-center gap-2"
                 >
-                  Explore Universities
+                  <GraduationCap className="w-4 h-4" />
+                  <span>Student Portal Login</span>
                 </Link>
                 <Link
-                  to="/auth"
+                  to="/super-admin/login"
                   onClick={() => setMobileMenuOpen(false)}
-                  className="w-full text-center py-2 rounded-lg text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200"
+                  className="w-full text-center py-2.5 rounded-lg text-xs font-bold text-slate-300 bg-slate-900 border border-slate-700 hover:bg-slate-800 flex items-center justify-center gap-2"
                 >
-                  Sign In / Create Account
+                  <Shield className="w-3.5 h-3.5 text-teal-400" />
+                  <span>Super Admin Login</span>
                 </Link>
               </>
             )}

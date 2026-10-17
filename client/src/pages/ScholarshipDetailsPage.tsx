@@ -12,13 +12,18 @@ import {
   Coins,
   ArrowLeft,
   BookOpen,
+  Flag,
 } from 'lucide-react';
 import { SeoHead } from '../components/common/SeoHead.js';
 import { Breadcrumbs } from '../components/common/Breadcrumbs.js';
+import { ReportCorrectionModal } from '../components/common/ReportCorrectionModal.js';
 
 export const ScholarshipDetailsPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const [scholarship, setScholarship] = useState<Scholarship | null>(null);
+  const [isReportModalOpen, setIsReportModalOpen] = useState(false);
+  const [reportField, setReportField] = useState('SCHOLARSHIP_ELIGIBILITY');
+  const [reportCurrentValue, setReportCurrentValue] = useState('');
 
   useEffect(() => {
     if (id) {
@@ -128,8 +133,8 @@ export const ScholarshipDetailsPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Official Button */}
-          <div className="pt-2">
+          {/* Official Button & Report Action */}
+          <div className="pt-2 flex flex-wrap items-center gap-3">
             <a
               href={scholarship.officialApplicationUrl}
               target="_blank"
@@ -139,6 +144,19 @@ export const ScholarshipDetailsPage: React.FC = () => {
               <span>Apply via Official Scholarship Portal</span>
               <ExternalLink className="w-4 h-4" />
             </a>
+
+            <button
+              type="button"
+              onClick={() => {
+                setReportField('SCHOLARSHIP_ELIGIBILITY');
+                setReportCurrentValue(scholarship.academicRequirements);
+                setIsReportModalOpen(true);
+              }}
+              className="inline-flex items-center gap-1.5 px-4 py-3.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 hover:text-rose-600 text-xs sm:text-sm font-semibold transition-colors"
+            >
+              <Flag className="w-4 h-4 text-slate-400" />
+              <span>Report Incorrect Information</span>
+            </button>
           </div>
         </div>
 
@@ -171,6 +189,16 @@ export const ScholarshipDetailsPage: React.FC = () => {
           </div>
         </div>
       </div>
+
+      <ReportCorrectionModal
+        isOpen={isReportModalOpen}
+        onClose={() => setIsReportModalOpen(false)}
+        entityType="SCHOLARSHIP"
+        entityId={scholarship.id}
+        entityName={scholarship.name}
+        defaultField={reportField}
+        currentValue={reportCurrentValue}
+      />
     </div>
   );
 };

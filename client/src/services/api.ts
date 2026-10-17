@@ -308,3 +308,411 @@ export async function getAdminStats() {
   if (res.ok) return await res.json();
   throw new Error('Failed to fetch admin stats');
 }
+
+// 10. Global Institution Coverage & Ingestion Pipeline
+export async function getCoverageDashboard() {
+  const res = await fetch(`${API_BASE}/admin/institutions/coverage`, {
+    headers: getAuthHeader(),
+  });
+  if (res.ok) return await res.json();
+  throw new Error('Failed to fetch coverage dashboard');
+}
+
+export async function getPaginatedRegistry(params?: {
+  page?: number;
+  limit?: number;
+  search?: string;
+  country?: string;
+  institutionType?: string;
+  accreditationStatus?: string;
+  sortBy?: string;
+  sortOrder?: string;
+}) {
+  const url = new URL(`${window.location.origin}${API_BASE}/admin/institutions/registry`);
+  if (params?.page) url.searchParams.set('page', params.page.toString());
+  if (params?.limit) url.searchParams.set('limit', params.limit.toString());
+  if (params?.search) url.searchParams.set('search', params.search);
+  if (params?.country && params.country !== 'all') url.searchParams.set('country', params.country);
+  if (params?.institutionType && params.institutionType !== 'all') url.searchParams.set('institutionType', params.institutionType);
+  if (params?.accreditationStatus && params.accreditationStatus !== 'all') url.searchParams.set('accreditationStatus', params.accreditationStatus);
+  if (params?.sortBy) url.searchParams.set('sortBy', params.sortBy);
+  if (params?.sortOrder) url.searchParams.set('sortOrder', params.sortOrder);
+
+  const res = await fetch(url.toString(), {
+    headers: getAuthHeader(),
+  });
+  if (res.ok) return await res.json();
+  throw new Error('Failed to fetch paginated registry');
+}
+
+export async function getCandidatesQueue(params?: {
+  page?: number;
+  limit?: number;
+  status?: string;
+  country?: string;
+}) {
+  const url = new URL(`${window.location.origin}${API_BASE}/admin/institutions/candidates`);
+  if (params?.page) url.searchParams.set('page', params.page.toString());
+  if (params?.limit) url.searchParams.set('limit', params.limit.toString());
+  if (params?.status && params.status !== 'all') url.searchParams.set('status', params.status);
+  if (params?.country && params.country !== 'all') url.searchParams.set('country', params.country);
+
+  const res = await fetch(url.toString(), {
+    headers: getAuthHeader(),
+  });
+  if (res.ok) return await res.json();
+  throw new Error('Failed to fetch candidate review queue');
+}
+
+export async function reviewCandidate(
+  candidateId: string,
+  action: 'APPROVE' | 'REJECT' | 'RESOLVE_DUPLICATE',
+  reviewNotes?: string
+) {
+  const res = await fetch(`${API_BASE}/admin/institutions/candidates/${candidateId}/review`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...getAuthHeader(),
+    },
+    body: JSON.stringify({ action, reviewNotes }),
+  });
+  if (res.ok) return await res.json();
+  throw new Error('Failed to process candidate review');
+}
+
+export async function triggerIngestion(countrySlug?: string) {
+  const res = await fetch(`${API_BASE}/admin/institutions/ingest`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...getAuthHeader(),
+    },
+    body: JSON.stringify({ countrySlug }),
+  });
+  if (res.ok) return await res.json();
+  throw new Error('Failed to trigger ingestion pipeline');
+}
+
+export async function getIngestionBatches() {
+  const res = await fetch(`${API_BASE}/admin/institutions/batches`, {
+    headers: getAuthHeader(),
+  });
+  if (res.ok) return await res.json();
+  throw new Error('Failed to fetch ingestion batches');
+}
+
+// ==========================================
+// ENGLISH TESTS & GLOBAL ACCEPTANCE API
+// ==========================================
+
+export async function getEnglishTestMatrix() {
+  const res = await fetch(`${API_BASE}/english-tests/matrix`);
+  if (res.ok) return await res.json();
+  throw new Error('Failed to fetch English test comparison matrix');
+}
+
+export async function getUniversityTestAcceptances(params?: {
+  countrySlug?: string;
+  search?: string;
+  academicLevel?: string;
+  testFormatCode?: string;
+  deliveryFormat?: string;
+  status?: string;
+  page?: number;
+  limit?: number;
+}) {
+  const url = new URL(`${window.location.origin}${API_BASE}/english-tests/university-acceptance`);
+  if (params?.countrySlug) url.searchParams.set('countrySlug', params.countrySlug);
+  if (params?.search) url.searchParams.set('search', params.search);
+  if (params?.academicLevel) url.searchParams.set('academicLevel', params.academicLevel);
+  if (params?.testFormatCode) url.searchParams.set('testFormatCode', params.testFormatCode);
+  if (params?.deliveryFormat) url.searchParams.set('deliveryFormat', params.deliveryFormat);
+  if (params?.status) url.searchParams.set('status', params.status);
+  if (params?.page) url.searchParams.set('page', String(params.page));
+  if (params?.limit) url.searchParams.set('limit', String(params.limit));
+
+  const res = await fetch(url.toString());
+  if (res.ok) return await res.json();
+  throw new Error('Failed to fetch university test acceptance policies');
+}
+
+export async function getEnglishAdvisorRecommendation(payload: {
+  targetCountry?: string;
+  qualificationLevel?: string;
+  shortlistedUniIds?: string[];
+  deliveryPreference?: 'TEST_CENTRE' | 'ONLINE' | 'NO_PREFERENCE';
+  existingTest?: string;
+  existingScore?: number;
+  budgetBdt?: number;
+}) {
+  const res = await fetch(`${API_BASE}/english-tests/advisor-recommendation`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...getAuthHeader(),
+    },
+    body: JSON.stringify(payload),
+  });
+  if (res.ok) return await res.json();
+  throw new Error('Failed to get English test recommendation');
+}
+
+export async function submitEnglishTestCorrection(payload: {
+  reporterName?: string;
+  reporterEmail?: string;
+  targetType: 'TEST_FEE' | 'UNIVERSITY_POLICY';
+  feeId?: string;
+  policyId?: string;
+  correctionCategory: string;
+  proposedChange: string;
+  evidenceUrl?: string;
+  evidenceNotes?: string;
+}) {
+  const res = await fetch(`${API_BASE}/english-tests/corrections`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...getAuthHeader(),
+    },
+    body: JSON.stringify(payload),
+  });
+  if (res.ok) return await res.json();
+  const err = await res.json().catch(() => ({}));
+  throw new Error(err.error || 'Failed to submit test report');
+}
+
+export async function getAdminEnglishTestsOverview() {
+  const res = await fetch(`${API_BASE}/admin/english-tests/overview`, {
+    headers: getAuthHeader(),
+  });
+  if (res.ok) return await res.json();
+  throw new Error('Failed to fetch admin English test overview');
+}
+
+export async function updateAdminTestFee(
+  id: string,
+  payload: {
+    amount?: number;
+    currency?: string;
+    bdtEstimate?: number;
+    officialFeeSourceUrl?: string;
+    verificationStatus?: string;
+    availabilityNotes?: string;
+  }
+) {
+  const res = await fetch(`${API_BASE}/admin/english-tests/fees/${id}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      ...getAuthHeader(),
+    },
+    body: JSON.stringify(payload),
+  });
+  if (res.ok) return await res.json();
+  const err = await res.json().catch(() => ({}));
+  throw new Error(err.error || 'Failed to update test fee');
+}
+
+export async function upsertAdminUniversityPolicy(payload: any) {
+  const res = await fetch(`${API_BASE}/admin/english-tests/policies`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...getAuthHeader(),
+    },
+    body: JSON.stringify(payload),
+  });
+  if (res.ok) return await res.json();
+  const err = await res.json().catch(() => ({}));
+  throw new Error(err.error || 'Failed to save university policy');
+}
+
+export async function getAdminTestCorrectionsQueue() {
+  const res = await fetch(`${API_BASE}/admin/english-tests/corrections`, {
+    headers: getAuthHeader(),
+  });
+  if (res.ok) return await res.json();
+  throw new Error('Failed to fetch test corrections queue');
+}
+
+export async function reviewAdminTestCorrection(
+  id: string,
+  decision: 'APPROVE' | 'REJECT',
+  adminNotes: string
+) {
+  const res = await fetch(`${API_BASE}/admin/english-tests/corrections/${id}/review`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...getAuthHeader(),
+    },
+    body: JSON.stringify({ decision, adminNotes }),
+  });
+  if (res.ok) return await res.json();
+  const err = await res.json().catch(() => ({}));
+  throw new Error(err.error || 'Failed to process correction review');
+}
+
+export async function getAdminOutdatedTestPolicies() {
+  const res = await fetch(`${API_BASE}/admin/english-tests/outdated-policies`, {
+    headers: getAuthHeader(),
+  });
+  if (res.ok) return await res.json();
+  throw new Error('Failed to fetch outdated policies');
+}
+
+export async function triggerAdminEnglishTestSeed() {
+  const res = await fetch(`${API_BASE}/admin/english-tests/seed`, {
+    method: 'POST',
+    headers: getAuthHeader(),
+  });
+  if (res.ok) return await res.json();
+  throw new Error('Failed to trigger English test seed');
+}
+
+// ==========================================
+// MEDIUM OF INSTRUCTION (MOI) & EXEMPTION API
+// ==========================================
+
+export async function getMoiPolicies(params?: {
+  country?: string;
+  universityId?: string;
+  qualificationLevel?: string;
+  acceptanceStatus?: string;
+  search?: string;
+  page?: number;
+  limit?: number;
+}) {
+  const url = new URL(`${window.location.origin}${API_BASE}/moi/policies`);
+  if (params?.country) url.searchParams.set('country', params.country);
+  if (params?.universityId) url.searchParams.set('universityId', params.universityId);
+  if (params?.qualificationLevel) url.searchParams.set('qualificationLevel', params.qualificationLevel);
+  if (params?.acceptanceStatus) url.searchParams.set('acceptanceStatus', params.acceptanceStatus);
+  if (params?.search) url.searchParams.set('search', params.search);
+  if (params?.page) url.searchParams.set('page', String(params.page));
+  if (params?.limit) url.searchParams.set('limit', String(params.limit));
+
+  const res = await fetch(url.toString());
+  if (res.ok) return await res.json();
+  throw new Error('Failed to fetch MOI policies');
+}
+
+export async function getMoiPolicyById(id: string) {
+  const res = await fetch(`${API_BASE}/moi/policies/${id}`);
+  if (res.ok) return await res.json();
+  throw new Error('Failed to fetch MOI policy details');
+}
+
+export async function checkMoiEligibility(payload: {
+  country: string;
+  universityId: string;
+  programId?: string;
+  completedQualification: string;
+  awardingInstitution: string;
+  awardingCountry?: string;
+  allTaughtInEnglish: boolean;
+  graduationYear: number;
+  canProvideMoiLetter: boolean;
+  hasAdditionalCourseReqs?: boolean;
+}) {
+  const res = await fetch(`${API_BASE}/moi/check-eligibility`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...getAuthHeader(),
+    },
+    body: JSON.stringify(payload),
+  });
+  if (res.ok) return await res.json();
+  const err = await res.json().catch(() => ({}));
+  throw new Error(err.error || 'Failed to assess MOI eligibility');
+}
+
+export async function submitMoiCorrection(payload: {
+  universityName: string;
+  issueCategory: string;
+  description: string;
+  evidenceUrl?: string;
+  evidenceText?: string;
+  moiPolicyId?: string;
+  reporterName?: string;
+  reporterEmail?: string;
+}) {
+  const res = await fetch(`${API_BASE}/moi/corrections`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...getAuthHeader(),
+    },
+    body: JSON.stringify(payload),
+  });
+  if (res.ok) return await res.json();
+  const err = await res.json().catch(() => ({}));
+  throw new Error(err.error || 'Failed to submit MOI correction');
+}
+
+export async function adminCreateMoiPolicy(payload: any) {
+  const res = await fetch(`${API_BASE}/admin/moi/policies`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...getAuthHeader(),
+    },
+    body: JSON.stringify(payload),
+  });
+  if (res.ok) return await res.json();
+  const err = await res.json().catch(() => ({}));
+  throw new Error(err.error || 'Failed to create MOI policy');
+}
+
+export async function adminUpdateMoiPolicy(id: string, payload: any) {
+  const res = await fetch(`${API_BASE}/admin/moi/policies/${id}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      ...getAuthHeader(),
+    },
+    body: JSON.stringify(payload),
+  });
+  if (res.ok) return await res.json();
+  const err = await res.json().catch(() => ({}));
+  throw new Error(err.error || 'Failed to update MOI policy');
+}
+
+export async function adminGetMoiCorrections() {
+  const res = await fetch(`${API_BASE}/admin/moi/corrections`, {
+    headers: getAuthHeader(),
+  });
+  if (res.ok) return await res.json();
+  throw new Error('Failed to fetch MOI corrections');
+}
+
+export async function adminReviewMoiCorrection(
+  id: string,
+  action: 'APPROVED' | 'REJECTED',
+  adminNotes: string
+) {
+  const res = await fetch(`${API_BASE}/admin/moi/corrections/${id}/review`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...getAuthHeader(),
+    },
+    body: JSON.stringify({ action, adminNotes }),
+  });
+  if (res.ok) return await res.json();
+  const err = await res.json().catch(() => ({}));
+  throw new Error(err.error || 'Failed to review MOI correction');
+}
+
+export async function adminGetOutdatedMoiPolicies() {
+  const res = await fetch(`${API_BASE}/admin/moi/outdated`, {
+    headers: getAuthHeader(),
+  });
+  if (res.ok) return await res.json();
+  throw new Error('Failed to fetch outdated MOI policies');
+}
+
+
+

@@ -19,9 +19,12 @@ import {
   Clock,
   ArrowLeft,
   CheckCircle2,
+  Flag,
 } from 'lucide-react';
 import { SeoHead } from '../components/common/SeoHead.js';
 import { Breadcrumbs } from '../components/common/Breadcrumbs.js';
+import { DeadlinesPanel } from '../components/common/DeadlinesPanel.js';
+import { ReportCorrectionModal } from '../components/common/ReportCorrectionModal.js';
 
 export const UniversityDetailsPage: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -31,6 +34,9 @@ export const UniversityDetailsPage: React.FC = () => {
     scholarships: Scholarship[];
   } | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isReportModalOpen, setIsReportModalOpen] = useState(false);
+  const [reportField, setReportField] = useState('OTHER');
+  const [reportCurrentValue, setReportCurrentValue] = useState('');
 
   const { isUniversitySaved, toggleSaveUniversity } = useSaved();
   const { isInCompare, addToCompare, removeFromCompare } = useCompare();
@@ -159,6 +165,20 @@ export const UniversityDetailsPage: React.FC = () => {
                 <span>Official Admissions</span>
                 <ExternalLink className="w-3.5 h-3.5" />
               </a>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setReportField('OTHER');
+                  setReportCurrentValue('');
+                  setIsReportModalOpen(true);
+                }}
+                className="px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 hover:text-rose-600 text-xs font-semibold transition-colors inline-flex items-center gap-1.5"
+                title="Report incorrect tuition, admission criteria, or dead links"
+              >
+                <Flag className="w-3.5 h-3.5 text-slate-400 group-hover:text-rose-500" />
+                <span>Report Correction</span>
+              </button>
             </div>
           </div>
 
@@ -184,6 +204,14 @@ export const UniversityDetailsPage: React.FC = () => {
             )}
           </div>
         </div>
+
+        {/* Deadlines & Intakes Panel */}
+        <DeadlinesPanel
+          universityId={university.id}
+          entityName={university.name}
+          entitySlug={university.slug}
+          entityType="UNIVERSITY"
+        />
 
         {/* Verified Course Catalog */}
         <div className="space-y-4">
@@ -280,6 +308,18 @@ export const UniversityDetailsPage: React.FC = () => {
           <span>Information authenticated against official institutional sources on: {new Date(university.lastVerifiedAt).toLocaleDateString()}</span>
         </div>
       </div>
+
+      {/* Community Data Correction Modal */}
+      <ReportCorrectionModal
+        isOpen={isReportModalOpen}
+        onClose={() => setIsReportModalOpen(false)}
+        entityType="UNIVERSITY"
+        entityId={university.id}
+        entityName={university.name}
+        entitySlug={university.slug}
+        defaultField={reportField}
+        currentValue={reportCurrentValue}
+      />
     </div>
   );
 };

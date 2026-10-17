@@ -27,6 +27,7 @@ export const UniversitiesPage: React.FC = () => {
   const [selectedContinent, setSelectedContinent] = useState(searchParams.get('continent') || 'All Continents');
   const [selectedCountry, setSelectedCountry] = useState(searchParams.get('country') || 'all');
   const [selectedType, setSelectedType] = useState(searchParams.get('type') || 'all');
+  const [selectedInstType, setSelectedInstType] = useState(searchParams.get('instType') || 'all');
   const [selectedLevel, setSelectedLevel] = useState(searchParams.get('level') || 'all');
   const [maxIelts, setMaxIelts] = useState(searchParams.get('maxIelts') || '');
   const [sortBy, setSortBy] = useState<'ranking' | 'name' | 'acceptance'>('ranking');
@@ -58,6 +59,11 @@ export const UniversitiesPage: React.FC = () => {
         list = list.filter((u) => u.type === selectedType);
       }
 
+      // Institution Type filter (Colleges, Business Schools, Institutes of Technology, Pathways, Vocational)
+      if (selectedInstType !== 'all') {
+        list = list.filter((u: any) => u.institutionType === selectedInstType);
+      }
+
       // IELTS filter
       if (maxIelts) {
         const target = parseFloat(maxIelts);
@@ -70,7 +76,7 @@ export const UniversitiesPage: React.FC = () => {
       setCurrentPage(1);
       setLoading(false);
     });
-  }, [selectedContinent, selectedCountry, selectedType, selectedLevel, search, maxIelts]);
+  }, [selectedContinent, selectedCountry, selectedType, selectedInstType, selectedLevel, search, maxIelts]);
 
   const updateParam = (key: string, val: string) => {
     const next = new URLSearchParams(searchParams);
@@ -97,6 +103,11 @@ export const UniversitiesPage: React.FC = () => {
     updateParam('type', val);
   };
 
+  const handleInstTypeChange = (val: string) => {
+    setSelectedInstType(val);
+    updateParam('instType', val);
+  };
+
   const handleLevelChange = (val: string) => {
     setSelectedLevel(val);
     updateParam('level', val);
@@ -112,6 +123,7 @@ export const UniversitiesPage: React.FC = () => {
     setSelectedContinent('All Continents');
     setSelectedCountry('all');
     setSelectedType('all');
+    setSelectedInstType('all');
     setSelectedLevel('all');
     setMaxIelts('');
     setSearchParams({});
@@ -148,6 +160,7 @@ export const UniversitiesPage: React.FC = () => {
     search ? { key: 'search', label: `"${search}"`, onClear: () => setSearch('') } : null,
     selectedContinent !== 'All Continents' ? { key: 'continent', label: `Continent: ${selectedContinent}`, onClear: () => handleContinentChange('All Continents') } : null,
     selectedCountry !== 'all' ? { key: 'country', label: `Country: ${COUNTRIES_DATA.find((c) => c.slug === selectedCountry)?.name || selectedCountry}`, onClear: () => handleCountryChange('all') } : null,
+    selectedInstType !== 'all' ? { key: 'instType', label: `Institution: ${selectedInstType.replace(/_/g, ' ')}`, onClear: () => handleInstTypeChange('all') } : null,
     selectedType !== 'all' ? { key: 'type', label: `Type: ${selectedType}`, onClear: () => handleTypeChange('all') } : null,
     selectedLevel !== 'all' ? { key: 'level', label: `Level: ${selectedLevel}`, onClear: () => handleLevelChange('all') } : null,
     maxIelts ? { key: 'ielts', label: `IELTS ≤ ${maxIelts}`, onClear: () => handleIeltsChange('') } : null,
@@ -156,8 +169,8 @@ export const UniversitiesPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-slate-50 py-10">
       <SeoHead
-        title="Explore 130+ Global Universities | Borno Higher Study"
-        description="Search accredited universities across Europe, North America, Asia, Oceania, South America, and Africa. Filter by degree level, published tuition fees, and IELTS criteria."
+        title="Explore 150+ Global Universities & Colleges | Borno Higher Study"
+        description="Search accredited universities, colleges, business schools, institutes of technology, and pathway providers across Europe, North America, Asia, and Oceania."
         canonicalPath="/universities"
       />
 
@@ -166,27 +179,27 @@ export const UniversitiesPage: React.FC = () => {
         <div className="text-center max-w-3xl mx-auto space-y-3">
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-teal-50 text-teal-800 text-xs font-bold border border-teal-200">
             <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-            <span>100+ Verified Universities Milestone</span>
+            <span>150+ Verified Global Institutions</span>
           </div>
           <h1 className="text-3xl sm:text-5xl font-extrabold text-brand-navy">
-            Explore Global Universities
+            Explore Global Institutions & Colleges
           </h1>
           <p className="text-slate-600 text-sm sm:text-base leading-relaxed">
-            Search verified institutions cross-referenced with the UNESCO-IAU World Higher Education Database. Discover official admissions, tuition, and degrees.
+            Search verified universities, business schools, colleges, institutes of technology, and pathway providers worldwide.
           </p>
         </div>
 
         {/* Filter Controls Bar */}
         <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-card space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-6 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
             {/* Search Input */}
-            <div className="md:col-span-2 relative">
+            <div className="lg:col-span-2 relative">
               <Search className="w-4 h-4 text-slate-400 absolute left-3 top-3.5" />
               <input
                 type="text"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search university name, program, city, or WHED ID…"
+                placeholder="Search university, college, business school, city..."
                 className="w-full pl-9 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-medium focus:outline-hidden focus:ring-1 focus:ring-teal-500"
               />
             </div>
@@ -219,6 +232,24 @@ export const UniversitiesPage: React.FC = () => {
                     {c.flagEmoji} {c.name}
                   </option>
                 ))}
+              </select>
+            </div>
+
+            {/* Institution Type Selector */}
+            <div>
+              <select
+                value={selectedInstType}
+                onChange={(e) => handleInstTypeChange(e.target.value)}
+                className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-medium focus:ring-1 focus:ring-teal-500"
+              >
+                <option value="all">🏛️ All Provider Types</option>
+                <option value="UNIVERSITY">Universities</option>
+                <option value="COLLEGE">Colleges</option>
+                <option value="BUSINESS_SCHOOL">Business Schools</option>
+                <option value="INSTITUTE_OF_TECHNOLOGY">Institutes of Technology</option>
+                <option value="PATHWAY_PROVIDER">Pathway & Foundation</option>
+                <option value="VOCATIONAL_INSTITUTION">Vocational & TAFE</option>
+                <option value="LANGUAGE_SCHOOL">Language Schools</option>
               </select>
             </div>
 

@@ -13,20 +13,37 @@ model User {
   email         String    @unique
   passwordHash  String
   name          String
-  role          String    @default("STUDENT") // SUPER_ADMIN, DATA_EDITOR, DATA_REVIEWER, STUDENT
+  role          String    @default("STUDENT") // SUPER_ADMIN, ADMIN, MODERATOR, CONTRIBUTOR, STUDENT, VISITOR
   avatarUrl     String?
   targetCountry String?
   targetDegree  String?
   targetSubject String?
-  budget        Float?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  budget               Float?
+  passwordResetToken   String?
+  passwordResetExpires DateTime?
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
 
   savedUniversities SavedUniversity[]
   savedScholarships SavedScholarship[]
   applicationPlans  ApplicationPlan[]
   agentConversations AgentConversation[]
   auditLogs         AuditLog[]
+
+  // Contributor, Community, Profile & Document Relations
+  studentProfile       StudentProfile?
+  contributorApp       ContributorApplication?
+  posts                Post[]
+  moderationReviews    ModerationReview[]
+  workspaceMembers     WorkspaceMember[]
+  financialSubmissions FinancialDocumentSubmission[]
+  notifications        Notification[]
+  informationReports   InformationReport[]
+  deadlineBookmarks    UserDeadlineBookmark[]
+  testCorrections      TestAcceptanceCorrection[]
+  testPreferences      StudentTestPreference[]
+  moiCorrections       MoiCorrectionReport[]
+  visaCorrections      VisaCorrectionReport[]
 }
 
 model Country {
@@ -58,6 +75,12 @@ model Country {
   cities             City[]
   universities       University[]
   scholarships       Scholarship[]
+  visaStatistics     VisaStatistics[]
+  visaPolicies       VisaPolicy[]
+  visaCentres        VisaApplicationCentre[]
+  applicantRules     ApplicantJurisdictionRule[]
+  socialAccounts     OfficialSocialAccount[]
+  socialUpdates      SocialUpdate[]
 }
 
 model City {
@@ -90,7 +113,11 @@ model University {
   websiteUrl         String
   admissionsUrl      String
   type               String             @default("PUBLIC") // PUBLIC, PRIVATE, SEMI_GOVERNMENT, OTHER
+  institutionType    String             @default("UNIVERSITY") // UNIVERSITY, COLLEGE, BUSINESS_SCHOOL, INSTITUTE_OF_TECHNOLOGY, COMMUNITY_COLLEGE, UNIVERSITY_COLLEGE, PATHWAY_PROVIDER, LANGUAGE_SCHOOL, VOCATIONAL_TECHNICAL, RESEARCH_INSTITUTE
+  accreditationStatus String            @default("RECOGNIZED") // RECOGNIZED, STATE_ACCREDITED, MINISTRY_APPROVED, CANDIDATE
+  accreditationBody  String?            // e.g. QQI, SKVC, ZEvA, AACSB, EQUIS
   levelsOffered      String             @default("BACHELOR,MASTER,PHD") // Comma-delimited
+  qualificationsOffered String          @default("BACHELOR,MASTER,PHD") // Comma-delimited: BACHELOR, MASTER, PHD, FOUNDATION, PATHWAY, DIPLOMA, CERTIFICATE, VOCATIONAL
   verificationStatus String             @default("VERIFIED") // VERIFIED, PENDING_REVIEW, NEEDS_UPDATE, CONFLICT_DETECTED
   lastVerifiedAt     DateTime           @default(now())
   qsRanking          Int?
@@ -99,6 +126,11 @@ model University {
   internationalOfficeEmail String?
   internationalOfficePhone String?
   sourceUrl          String
+  whedId             String?
+  sourceRegistry     String?            // e.g. IPEDS, HESA, DAAD_HRK, OKM_FINLAND, TEQSA, RUCT, WHED
+  normalizedDomain   String?            // Normalized domain for duplicate detection
+  provenance         String?            // Provenance description / registry license details
+  candidateId        String?            // Link to origin candidate record if imported via queue
   createdAt          DateTime           @default(now())
   updatedAt          DateTime           @updatedAt
 
@@ -112,6 +144,11 @@ model University {
   savedByUsers       SavedUniversity[]
   officialSources    OfficialSource[]
   verificationHistory VerificationHistory[]
+  deadlines          ApplicationDeadline[]
+  testPolicies       UniversityTestPolicy[]
+  moiPolicies        MoiPolicy[]
+  moiSources         MoiPolicySource[]
+  moiExemptions      EnglishLanguageExemption[]
 }
 
 model Campus {
@@ -157,15 +194,19 @@ model Program {
   subjectName        String?            // Denormalized
   subjectCategory    String?            // Denormalized
   degreeLevel        String             // BACHELOR, MASTER, PHD, DIPLOMA
+  qualificationType  String             @default("BACHELOR") // BACHELOR, MASTER, PHD, FOUNDATION, PATHWAY, DIPLOMA, POSTGRAD_DIPLOMA, CERTIFICATE, VOCATIONAL, ENGLISH_PREP
+  studentCategory    String             @default("INTERNATIONAL") // INTERNATIONAL, EU_EEA, ALL
   durationMonths     Int                // e.g. 24 for 2-year Master's
   creditsEcts        Int?               // e.g. 120 ECTS
   languageOfInstruction String          @default("English")
   annualTuitionLocal Float
+  totalTuitionLocal  Float?
   currencyCode       String
   applicationFeeLocal Float             @default(0)
   programUrl         String
   curriculumUrl      String?
   prerequisites      String?
+  intakeSeason       String?
   verificationStatus String             @default("VERIFIED")
   lastVerifiedAt     DateTime           @default(now())
   createdAt          DateTime           @default(now())
@@ -176,6 +217,9 @@ model Program {
   tuitionFees        TuitionFee[]
   scholarships       Scholarship[]
   admissionCycles    AdmissionCycle[]
+  deadlines          ApplicationDeadline[]
+  testPolicies       UniversityTestPolicy[]
+  moiPolicies        MoiPolicy[]
 }
 
 model ProgramRequirement {
@@ -272,6 +316,7 @@ model Scholarship {
 
   eligibilityRules       ScholarshipEligibility[]
   savedByUsers           SavedScholarship[]
+  deadlines              ApplicationDeadline[]
 }
 
 model ScholarshipEligibility {
@@ -305,6 +350,7 @@ model OfficialSource {
   title        String
   url          String
   domain       String
+  sourceType   String     @default("OFFICIAL_WEBSITE") // OFFICIAL_WEBSITE, MOE_PORTAL, WHED_IAU, ACCREDITATION_BODY
   lastCheckedAt DateTime  @default(now())
   httpStatus   Int?       @default(200)
 }
@@ -407,9 +453,916 @@ model AuditLog {
   id         String   @id @default(uuid())
   userId     String?
   user       User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
-  action     String   // e.g. "UPDATE_UNIVERSITY", "VERIFY_COURSE", "IMPORT_DATA"
-  entityType String   // "University", "Program", "Scholarship", "Country"
+  action     String   // e.g. "UPDATE_INSTITUTION", "VERIFY_COURSE", "APPROVE_CONTRIBUTOR", "APPROVE_FINANCIAL_DOC"
+  entityType String   // "Institution", "Program", "Post", "FinancialDoc", "Contributor"
   entityId   String
   details    String?  // JSON string
   timestamp  DateTime @default(now())
 }
+
+// ==========================================
+// 4. STUDENT CONTRIBUTOR & COMMUNITY MODELS
+// ==========================================
+
+model ContributorApplication {
+  id                    String    @id @default(uuid())
+  userId                String    @unique
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  studyDestination      String    // e.g. "Germany", "Finland", "Ireland", "Lithuania"
+  currentInstitution    String    // e.g. "Trinity College Dublin"
+  qualificationEnrolled String    // e.g. "MSc Data Science"
+  statementOfIntent     String
+  writingSampleUrl      String?
+  status                String    @default("PENDING") // PENDING, APPROVED, REJECTED, SUSPENDED
+  adminFeedback         String?
+  appliedAt             DateTime  @default(now())
+  reviewedAt            DateTime?
+  reviewedBy            String?
+}
+
+model Post {
+  id                 String    @id @default(uuid())
+  title              String
+  slug               String    @unique
+  category           String    // STUDY_ABROAD_EXPERIENCE, APPLICATION_GUIDE, SCHOLARSHIP_EXPERIENCE, COURSE_REVIEW, CITY_ACCOMMODATION, TEST_PREPARATION, STUDENT_LIFE
+  destinationCountry String?
+  institutionName    String?
+  content            String    // Markdown body
+  excerpt            String
+  authorId           String
+  author             User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  status             String    @default("PENDING_REVIEW") // DRAFT, PENDING_REVIEW, APPROVED, REJECTED, ARCHIVED
+  moderatorNotes     String?
+  views              Int       @default(0)
+  publishedAt        DateTime?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  moderationReviews  ModerationReview[]
+}
+
+model ModerationReview {
+  id          String   @id @default(uuid())
+  postId      String
+  post        Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  reviewerId  String
+  reviewer    User     @relation(fields: [reviewerId], references: [id], onDelete: Cascade)
+  status      String   // APPROVED, REJECTED, CHANGES_REQUESTED
+  reviewNotes String?
+  reviewedAt  DateTime @default(now())
+}
+
+model Workspace {
+  id          String            @id @default(uuid())
+  name        String
+  description String?
+  ownerId     String
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  members     WorkspaceMember[]
+}
+
+model WorkspaceMember {
+  id          String    @id @default(uuid())
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role        String    @default("EDITOR") // OWNER, EDITOR, VIEWER
+  joinedAt    DateTime  @default(now())
+
+  @@unique([workspaceId, userId])
+}
+
+// ==========================================
+// 6. BANK STATEMENT & FINANCIAL VERIFICATION
+// ==========================================
+
+model FinancialDocumentSubmission {
+  id                      String    @id @default(uuid())
+  userId                  String
+  user                    User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  documentCategory        String    // BANK_STATEMENT, SOLVENCY_CERTIFICATE, SCHOLARSHIP_AWARD_LETTER, SPONSORSHIP_LETTER, TUITION_RECEIPT, OTHER_FINANCIAL_EVIDENCE
+  title                   String
+  originalFilename        String
+  storagePath             String    // Secure private relative path on disk (never public)
+  fileSizeBytes           Int
+  mimeType                String
+  status                  String    @default("SUBMITTED") // DRAFT, SUBMITTED, UNDER_REVIEW, CORRECTIONS_REQUESTED, APPROVED_INTERNAL, REJECTED, WITHDRAWN
+  currency                String    @default("BDT")
+  balanceAmount           Float?
+  bankName                String?   // e.g. "Eastern Bank PLC", "City Bank", "Islami Bank"
+  accountHolderType       String    @default("STUDENT") // STUDENT, PARENT_SPONSOR, INSTITUTION
+  verificationDisclaimer  String    @default("Internal document review completed. This does not constitute legal banking verification or guarantee visa issuance.")
+  reviewedBy              String?   // Admin User ID
+  reviewerNotes           String?
+  submittedAt             DateTime  @default(now())
+  reviewedAt              DateTime?
+  updatedAt               DateTime  @updatedAt
+
+  history                 DocumentReviewHistory[]
+}
+
+model DocumentReviewHistory {
+  id             String                      @id @default(uuid())
+  submissionId   String
+  submission     FinancialDocumentSubmission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  changedBy      String                      // Admin ID or Student
+  previousStatus String
+  newStatus      String
+  notes          String?
+  timestamp      DateTime                    @default(now())
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String
+  message   String
+  type      String   @default("INFO") // INFO, SUCCESS, WARNING, ACTION_REQUIRED
+  link      String?
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+// ==========================================
+// 7. APPLICATION DEADLINES & INTAKES SYSTEM
+// ==========================================
+
+model ApplicationDeadline {
+  id                 String             @id @default(uuid())
+  universityId       String?
+  university         University?        @relation(fields: [universityId], references: [id], onDelete: Cascade)
+  programId          String?
+  program            Program?           @relation(fields: [programId], references: [id], onDelete: Cascade)
+  scholarshipId      String?
+  scholarship        Scholarship?       @relation(fields: [scholarshipId], references: [id], onDelete: Cascade)
+  
+  intakeSemester     String             // e.g. "Autumn 2026", "Spring 2027", "Winter 2026"
+  academicYear       String             // e.g. "2026-2027"
+  applicationType    String             @default("POSTGRADUATE") // UNDERGRADUATE, POSTGRADUATE, PHD, FOUNDATION, PATHWAY, SCHOLARSHIP
+  targetAudience     String             @default("INTERNATIONAL") // INTERNATIONAL, DOMESTIC, ALL
+  roundName          String?            // e.g. "Round 1 (Priority)", "Final Round"
+  
+  openDate           DateTime?
+  closeDate          DateTime?
+  openTime           String?            // e.g. "09:00"
+  closeTime          String?            // e.g. "23:59"
+  timeZone           String             @default("UTC") // e.g. "Europe/Dublin", "Europe/Berlin", "UTC"
+  isRolling          Boolean            @default(false)
+  status             String             @default("OPEN") // NOT_ANNOUNCED, UPCOMING, OPEN, CLOSING_SOON, CLOSED, SUSPENDED, EXTENDED, ROLLING, UNCONFIRMED
+  isDisputed         Boolean            @default(false)
+  disputeNote        String?
+  
+  applicationFee     Float?
+  currencyCode       String?            @default("EUR")
+  officialAppUrl     String?
+  officialSourceUrl  String
+  lastVerifiedAt     DateTime           @default(now())
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+
+  revisions          DeadlineRevision[]
+  bookmarks          UserDeadlineBookmark[]
+}
+
+model DeadlineRevision {
+  id                 String              @id @default(uuid())
+  deadlineId         String
+  deadline           ApplicationDeadline @relation(fields: [deadlineId], references: [id], onDelete: Cascade)
+  changedBy          String              // Admin User ID
+  previousOpenDate   DateTime?
+  newOpenDate        DateTime?
+  previousCloseDate  DateTime?
+  newCloseDate       DateTime?
+  previousStatus     String?
+  newStatus          String
+  reason             String
+  sourceEvidenceUrl  String
+  timestamp          DateTime            @default(now())
+}
+
+// ==========================================
+// 8. STUDENT INFORMATION REPORTS & CORRECTIONS
+// ==========================================
+
+model InformationReport {
+  id                     String                @id @default(uuid())
+  reportNumber           String                @unique // e.g. "RPT-2026-101"
+  reporterId             String?
+  reporter               User?                 @relation(fields: [reporterId], references: [id], onDelete: SetNull)
+  reporterEmail          String?
+  
+  entityType             String                // UNIVERSITY, PROGRAM, SCHOLARSHIP, DEADLINE, OTHER
+  entityId               String                // ID of affected entity
+  entitySlug             String?
+  entityName             String                // Name of university, program, or scholarship
+  
+  fieldBelievedIncorrect String                // OPEN_DATE, CLOSE_DATE, TUITION_FEE, ADMISSION_REQS, ENGLISH_REQS, BROKEN_LINK, MISLEADING_INFO, DUPLICATE_RECORD, OTHER
+  reasonCategory         String                // INCORRECT_DATE, OUTDATED_INFO, WRONG_TUITION, BROKEN_LINK, MISLEADING_INFO, OTHER
+  description            String
+  currentValue           String?
+  proposedCorrection     String?
+  officialEvidenceUrl    String
+  supportingDocPath      String?
+  
+  status                 String                @default("PENDING_REVIEW") // SUBMITTED, PENDING_REVIEW, UNDER_INVESTIGATION, MORE_INFO_REQUESTED, RESUBMITTED, APPROVED, REJECTED, DUPLICATE, RESOLVED, CLOSED
+  adminFeedback          String?
+  reviewedBy             String?               // Admin User ID
+  reviewedAt             DateTime?
+  createdAt              DateTime              @default(now())
+  updatedAt              DateTime              @updatedAt
+
+  comments               ReportComment[]
+  revisions              DataRevisionHistory[]
+  proposals              CorrectionProposal[]
+}
+
+model ReportComment {
+  id          String            @id @default(uuid())
+  reportId    String
+  report      InformationReport @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  authorId    String?
+  authorName  String
+  authorRole  String            // ADMIN, STUDENT
+  message     String
+  evidenceUrl String?
+  createdAt   DateTime          @default(now())
+}
+
+model DataRevisionHistory {
+  id            String             @id @default(uuid())
+  reportId      String?
+  report        InformationReport? @relation(fields: [reportId], references: [id], onDelete: SetNull)
+  entityType    String
+  entityId      String
+  fieldName     String
+  previousValue String
+  newValue      String
+  sourceUrl     String
+  reviewerId    String
+  reviewerName  String
+  reason        String
+  appliedAt     DateTime           @default(now())
+}
+
+model CorrectionProposal {
+  id                String             @id @default(uuid())
+  reportId          String?
+  report            InformationReport? @relation(fields: [reportId], references: [id], onDelete: SetNull)
+  entityType        String             // UNIVERSITY, PROGRAM, SCHOLARSHIP, DEADLINE
+  entityId          String
+  fieldName         String
+  currentValue      String?
+  proposedValue     String
+  sourceEvidenceUrl String
+  status            String             @default("PENDING") // PENDING, APPROVED, REJECTED
+  reviewedBy        String?
+  reviewedAt        DateTime?
+  rejectionReason   String?
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+}
+
+model StudentProfile {
+  id                 String   @id @default(uuid())
+  userId             String   @unique
+  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  educationLevel     String?  // HSC, BACHELOR, MASTER, OTHER
+  currentInstitution String?
+  gpa                Float?
+  preferredCountries String   @default("[]") // JSON string of country slugs
+  preferredSubjects  String   @default("[]") // JSON string of subject names
+  englishTestTaken   String?  // IELTS, TOEFL, PTE, NONE
+  englishScore       Float?
+  targetIntakeSeason String?  // Autumn 2026, Spring 2027
+  budgetAnnualUsd    Float?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+}
+
+model UserDeadlineBookmark {
+  id                 String              @id @default(uuid())
+  userId             String
+  user               User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  deadlineId         String
+  deadline           ApplicationDeadline @relation(fields: [deadlineId], references: [id], onDelete: Cascade)
+  notes              String?
+  reminderDaysBefore Int                 @default(7)
+  reminderSent       Boolean             @default(false)
+  createdAt          DateTime            @default(now())
+
+  @@unique([userId, deadlineId])
+}
+
+// ==========================================
+// 9. GLOBAL INSTITUTION COVERAGE & INGESTION
+// ==========================================
+
+model CountryCoverageSummary {
+  id                        String    @id @default(uuid())
+  countrySlug               String    @unique
+  countryName               String
+  countryCode               String
+  targetCount               Int       @default(100)
+  isTargetCapped            Boolean   @default(false) // true if total accredited institutions in country < 100
+  verifiedCount             Int       @default(0)
+  unverifiedCandidateCount  Int       @default(0)
+  needsReviewCount          Int       @default(0)
+  duplicateCount            Int       @default(0)
+  officialSourceCount       Int       @default(0)
+  coverageStatus            String    @default("IN_PROGRESS") // TARGET_MET, EXHAUSTIVE_COVERAGE, IN_PROGRESS, NEEDS_DATA
+  statusMessage             String?
+  lastImportAt              DateTime?
+  lastVerifiedAt            DateTime?
+  lastError                 String?
+  createdAt                 DateTime  @default(now())
+  updatedAt                 DateTime  @updatedAt
+}
+
+model InstitutionCandidate {
+  id                    String    @id @default(uuid())
+  name                  String
+  normalizedName        String
+  slug                  String    @unique
+  countryCode           String
+  countryName           String
+  countrySlug           String
+  cityName              String?
+  type                  String    @default("PUBLIC") // PUBLIC, PRIVATE, PROPRIETARY
+  institutionType       String    @default("UNIVERSITY") // UNIVERSITY, COLLEGE, BUSINESS_SCHOOL, UAS, INSTITUTE_OF_TECHNOLOGY, COMMUNITY_COLLEGE, PATHWAY_PROVIDER, VOCATIONAL
+  websiteUrl            String
+  admissionsUrl         String?
+  accreditationStatus   String    @default("RECOGNIZED")
+  accreditationBody     String?
+  whedId                String?
+  qualificationsOffered String    @default("BACHELOR,MASTER")
+  sourceRegistry        String    // e.g. IPEDS, HESA, DAAD_HRK, TEQSA, RUCT, OKM
+  sourceUrl             String
+  candidateStatus       String    @default("UNVERIFIED") // UNVERIFIED, NEEDS_REVIEW, APPROVED, REJECTED, DUPLICATE
+  duplicateOfId         String?
+  duplicateReason       String?
+  reviewNotes           String?
+  reviewedBy            String?
+  reviewedAt            DateTime?
+  batchId               String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+}
+
+model IngestionBatch {
+  id                 String    @id @default(uuid())
+  sourceRegistry     String
+  countryCode        String?
+  countrySlug        String?
+  discoveredCount    Int       @default(0)
+  importedCount      Int       @default(0)
+  verifiedCount      Int       @default(0)
+  rejectedCount      Int       @default(0)
+  pendingReviewCount Int       @default(0)
+  duplicateCount     Int       @default(0)
+  status             String    @default("IN_PROGRESS") // IN_PROGRESS, COMPLETED, FAILED
+  summaryReport      String?   // JSON text
+  startedAt          DateTime  @default(now())
+  completedAt        DateTime?
+}
+
+// ==========================================
+// 8. ENGLISH TESTS & GLOBAL ACCEPTANCE MODELS
+// ==========================================
+
+model EnglishTestProvider {
+  id              String              @id @default(uuid())
+  name            String              @unique // "IELTS (IDP / British Council)", "Pearson PTE", "ETS TOEFL"
+  code            String              @unique // "IELTS", "PTE", "TOEFL"
+  websiteUrl      String
+  countryOfOrigin String?             @default("United Kingdom / USA / Australia")
+  description     String?
+  formats         EnglishTestFormat[]
+  sources         TestSource[]
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+}
+
+model EnglishTestFormat {
+  id                          String                 @id @default(uuid())
+  providerId                  String
+  provider                    EnglishTestProvider    @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  name                        String                 // "IELTS Academic", "IELTS for UKVI Academic", "PTE Academic", "PTE Academic Online", "PTE Academic UKVI", "TOEFL iBT", "TOEFL iBT Home Edition"
+  code                        String                 @unique // "IELTS_ACADEMIC", "IELTS_UKVI_ACADEMIC", "PTE_ACADEMIC", "PTE_ACADEMIC_ONLINE", "PTE_UKVI", "TOEFL_IBT", "TOEFL_HOME_EDITION"
+  deliveryMode                String                 // "TEST_CENTRE", "ONLINE", "BOTH"
+  speakingFormat              String                 // "FACE_TO_FACE", "AI_COMPUTER_RECORDED", "COMPUTER_RECORDED_HUMAN_SCORED"
+  durationMinutes             Int                    // e.g. 165 for IELTS, 120 for PTE, 116 for TOEFL
+  scoreScale                  String                 // "0 - 9.0 Band Scale", "10 - 90 Scale", "0 - 120 Total Score"
+  scoreComponents             String                 @default("[\"Listening\", \"Reading\", \"Writing\", \"Speaking\"]")
+  scoringUpdateNotes          String?
+  resultTurnaround            String                 // e.g. "Computer: 1-5 days; Paper: 13 days"
+  resultTurnaroundSource      String?
+  validityYears               Int                    @default(2)
+  bookingUrl                  String
+  preparationResourcesUrl     String
+  preparationSummary          String?
+  acceptanceOverview          String
+  visaImmigrationRestrictions String
+  isActive                    Boolean                @default(true)
+  createdAt                   DateTime               @default(now())
+  updatedAt                   DateTime               @updatedAt
+
+  fees                        EnglishTestFee[]
+  policies                    UniversityTestPolicy[]
+}
+
+model EnglishTestFee {
+  id                    String                     @id @default(uuid())
+  testFormatId          String
+  testFormat            EnglishTestFormat          @relation(fields: [testFormatId], references: [id], onDelete: Cascade)
+  country               String                     @default("Bangladesh")
+  currency              String                     @default("BDT")
+  amount                Float?
+  currencyOriginal      String?                    @default("BDT")
+  amountOriginal        Float?
+  bdtEstimate           Float?
+  exchangeRateUsed      Float?
+  exchangeRateDate      DateTime?
+  officialFeeSourceUrl  String
+  sourcePublicationDate DateTime?
+  lastVerifiedAt        DateTime                   @default(now())
+  verificationStatus    String                     @default("VERIFIED") // VERIFIED, PENDING_REVIEW, OUTDATED
+  availabilityNotes     String?
+  reviewedBy            String?
+  createdAt             DateTime                   @default(now())
+  updatedAt             DateTime                   @updatedAt
+
+  corrections           TestAcceptanceCorrection[]
+}
+
+model UniversityTestPolicy {
+  id                  String                     @id @default(uuid())
+  universityId        String
+  university          University                 @relation(fields: [universityId], references: [id], onDelete: Cascade)
+  programId           String?
+  program             Program?                   @relation(fields: [programId], references: [id], onDelete: Cascade)
+  testFormatId        String
+  testFormat          EnglishTestFormat          @relation(fields: [testFormatId], references: [id], onDelete: Cascade)
+  testName            String                     // Denormalized for fast filter queries
+  deliveryFormat      String                     // "TEST_CENTRE", "ONLINE"
+  academicLevel       String                     @default("UNDERGRADUATE") // UNDERGRADUATE, POSTGRADUATE_TAUGHT, POSTGRADUATE_RESEARCH, FOUNDATION, ALL
+  policyTier          String?                    // "STANDARD", "HIGHER", "ADVANCED", "LAW", "MEDICINE"
+  status              String                     @default("ACCEPTED") // ACCEPTED, ACCEPTED_WITH_CONDITIONS, NOT_ACCEPTED, UNDER_REVIEW, NOT_CONFIRMED
+  minOverallScore     Float?
+  minListening        Float?
+  minReading          Float?
+  minWriting          Float?
+  minSpeaking         Float?
+  componentScoresJson String?                    // JSON string: {"listening":6.5,"reading":6.5,"writing":6.0,"speaking":6.0}
+  acceptedIntakes     String?                    @default("Autumn 2026, Spring 2027")
+  policyPeriod        String?                    @default("2026/2027 Academic Year")
+  officialPolicyUrl   String
+  sourceExcerpt       String?
+  conditions          String?
+  lastVerifiedAt      DateTime                   @default(now())
+  isOutdated          Boolean                    @default(false)
+  reviewerId          String?
+  approvalStatus      String                     @default("APPROVED") // APPROVED, PENDING, REJECTED
+  createdAt           DateTime                   @default(now())
+  updatedAt           DateTime                   @updatedAt
+
+  revisions           TestPolicyRevision[]
+  corrections         TestAcceptanceCorrection[]
+}
+
+model TestPolicyRevision {
+  id           String               @id @default(uuid())
+  policyId     String
+  policy       UniversityTestPolicy @relation(fields: [policyId], references: [id], onDelete: Cascade)
+  changedBy    String
+  changeType   String               // CREATED, UPDATED, CORRECTION_APPLIED, STATUS_CHANGED
+  previousData String?              // JSON snapshot
+  newData      String               // JSON snapshot
+  changeReason String?
+  timestamp    DateTime             @default(now())
+}
+
+model TestSource {
+  id            String               @id @default(uuid())
+  providerId    String?
+  provider      EnglishTestProvider? @relation(fields: [providerId], references: [id], onDelete: SetNull)
+  title         String
+  url           String
+  sourceType    String               // OFFICIAL_PROVIDER, GOV_IMMIGRATION, UNIVERSITY_ADMISSIONS, REGULATORY_BODY
+  isVerified    Boolean              @default(true)
+  lastCheckedAt DateTime             @default(now())
+  httpStatus    Int?                 @default(200)
+}
+
+model TestAcceptanceCorrection {
+  id                 String                @id @default(uuid())
+  userId             String?
+  user               User?                 @relation(fields: [userId], references: [id], onDelete: SetNull)
+  reporterEmail      String?
+  reporterName       String?
+  targetType         String                // "TEST_FEE", "UNIVERSITY_POLICY"
+  feeId              String?
+  fee                EnglishTestFee?       @relation(fields: [feeId], references: [id], onDelete: SetNull)
+  policyId           String?
+  policy             UniversityTestPolicy? @relation(fields: [policyId], references: [id], onDelete: SetNull)
+  correctionCategory String                // INCORRECT_FEE, OUTDATED_POLICY, INCORRECT_SCORE, WRONG_ONLINE_RESTRICTION, BROKEN_LINK, OTHER
+  proposedChange     String
+  evidenceUrl        String?
+  evidenceNotes      String?
+  status             String                @default("PENDING") // PENDING, APPROVED, REJECTED
+  reviewedBy         String?
+  reviewedAt         DateTime?
+  adminNotes         String?
+  createdAt          DateTime              @default(now())
+  updatedAt          DateTime              @updatedAt
+}
+
+model StudentTestPreference {
+  id                      String   @id @default(uuid())
+  userId                  String?
+  user                    User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  targetCountry           String
+  qualificationLevel      String
+  shortlistedUniIds       String   // JSON array of strings
+  deliveryPreference      String   // TEST_CENTRE, ONLINE, NO_PREFERENCE
+  existingTest            String?  // IELTS, PTE, TOEFL, NONE
+  existingScore           Float?
+  budgetBdt               Float?
+  recommendedTestFormatId String?
+  recommendationSummary   String?  // JSON text
+  createdAt               DateTime @default(now())
+}
+
+// ==========================================
+// 9. MEDIUM OF INSTRUCTION (MOI) & WAIVER MODELS
+// ==========================================
+
+model MoiPolicy {
+  id                         String                    @id @default(uuid())
+  universityId               String
+  university                 University                @relation(fields: [universityId], references: [id], onDelete: Cascade)
+  programId                  String?
+  program                    Program?                  @relation(fields: [programId], references: [id], onDelete: Cascade)
+  country                    String
+  qualificationLevel         String                    @default("POSTGRADUATE_TAUGHT") // UNDERGRADUATE, POSTGRADUATE_TAUGHT, POSTGRADUATE_RESEARCH, ALL
+  departmentName             String?
+  acceptanceStatus           String                    @default("ACCEPTED_WITH_CONDITIONS") // ACCEPTED_FOR_SPECIFIED_COURSES, ACCEPTED_WITH_CONDITIONS, NOT_ACCEPTED, ACCEPTED_ONLY_FOR_SELECTED_INSTITUTIONS, OFFICIAL_POLICY_NOT_VERIFIED, POLICY_REQUIRES_DIRECT_CONFIRMATION
+  scope                      String                    @default("ADMISSION_ONLY") // ADMISSION_ONLY, VISA_ONLY, BOTH, NEITHER
+  eligibleInstitutions       String?                   // Text or JSON list of accepted universities
+  eligibleCountries          String?                   // e.g. Bangladesh, India, Nigeria, or majority English speaking nations
+  minDegreeDurationYears     Float?                    @default(3.0)
+  graduationValidityYears    Int?                      @default(5) // e.g. completed within past 2-5 years
+  requiredCertificateWording String?                   // Exact or approved text requirement
+  transcriptsRequired        Boolean                   @default(true)
+  separateTestRequired       String                    @default("CONDITIONAL") // NO_TEST_REQUIRED, SEPARATE_TEST_REQUIRED, DEPENDS_ON_COURSE, CONDITIONAL
+  visaSeparateRequirementNote String                   @default("University academic MOI acceptance does NOT automatically satisfy immigration/visa rules. UKVI, Irish ISD, and Canadian study permit regulations may independently require an approved SELT or standard test.")
+  applicableIntakes          String?                   @default("Autumn 2026, Spring 2027")
+  officialPolicyUrl          String
+  sourceExcerpt              String?
+  reviewerNotes              String?
+  lastVerifiedAt             DateTime                  @default(now())
+  isOutdated                 Boolean                   @default(false)
+  adminApprovalStatus        String                    @default("APPROVED") // APPROVED, PENDING_REVIEW, REJECTED
+  createdAt                  DateTime                  @default(now())
+  updatedAt                  DateTime                  @updatedAt
+
+  conditions                 MoiEligibilityCondition[]
+  exemptions                 EnglishLanguageExemption[]
+  revisions                  MoiPolicyRevision[]
+  corrections                MoiCorrectionReport[]
+  sources                    MoiPolicySource[]
+}
+
+model MoiEligibilityCondition {
+  id           String    @id @default(uuid())
+  moiPolicyId  String
+  policy       MoiPolicy @relation(fields: [moiPolicyId], references: [id], onDelete: Cascade)
+  conditionType String   // DEGREE_DURATION, GRADUATION_RECENCY, INSTITUTION_RECOGNITION, MEDIUM_EVALUATION, TRANSCRIPT_NOTATION, INTERVIEW_VERIFICATION
+  title        String
+  description  String
+  isMandatory  Boolean   @default(true)
+  createdAt    DateTime  @default(now())
+}
+
+model EnglishLanguageExemption {
+  id                 String     @id @default(uuid())
+  moiPolicyId        String?
+  policy             MoiPolicy? @relation(fields: [moiPolicyId], references: [id], onDelete: SetNull)
+  universityId       String
+  university         University @relation(fields: [universityId], references: [id], onDelete: Cascade)
+  title              String
+  qualificationLevel String     @default("POSTGRADUATE_TAUGHT")
+  exemptionCategory  String     // MOI_DEGREE, MAJORITY_ENGLISH_COUNTRY, PRIOR_STUDY_IN_NATIVE_COUNTRY, SECONDARY_O_A_LEVELS, INTERNATIONAL_BACCALAUREATE
+  description        String
+  requirements       String
+  officialPolicyUrl  String
+  createdAt          DateTime   @default(now())
+  updatedAt          DateTime   @updatedAt
+}
+
+model MoiPolicySource {
+  id           String      @id @default(uuid())
+  moiPolicyId  String?
+  policy       MoiPolicy?  @relation(fields: [moiPolicyId], references: [id], onDelete: SetNull)
+  universityId String?
+  university   University? @relation(fields: [universityId], references: [id], onDelete: Cascade)
+  title        String
+  url          String
+  sourceType   String      @default("OFFICIAL_WEBSITE") // OFFICIAL_WEBSITE, FACULTY_DIRECTIVE, CALENDAR_REGULATION, INTERNATIONAL_OFFICE
+  lastCheckedAt DateTime   @default(now())
+  httpStatus   Int?        @default(200)
+}
+
+model MoiPolicyRevision {
+  id           String    @id @default(uuid())
+  moiPolicyId  String
+  policy       MoiPolicy @relation(fields: [moiPolicyId], references: [id], onDelete: Cascade)
+  changedBy    String
+  changeType   String    // CREATED, UPDATED, CORRECTION_APPLIED, ARCHIVED
+  previousData String?
+  newData      String
+  changeReason String?
+  timestamp    DateTime  @default(now())
+}
+
+model MoiCorrectionReport {
+  id             String     @id @default(uuid())
+  userId         String?
+  user           User?      @relation(fields: [userId], references: [id], onDelete: SetNull)
+  moiPolicyId    String?
+  policy         MoiPolicy? @relation(fields: [moiPolicyId], references: [id], onDelete: SetNull)
+  universityName String
+  reporterEmail  String?
+  reporterName   String?
+  issueCategory  String     // INCORRECT_MOI_STATUS, OUTDATED_POLICY, MISSING_COURSE_RESTRICTION, BROKEN_LINK, VISA_MISMATCH, OTHER
+  description    String
+  evidenceUrl    String?
+  evidenceText   String?
+  status         String     @default("PENDING") // PENDING, APPROVED, REJECTED
+  adminNotes     String?
+  reviewedBy     String?
+  reviewedAt     DateTime?
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+}
+
+// ==========================================
+// 10. LIVE GLOBAL VISA INTELLIGENCE & APPLICATION CENTRES MODELS
+// ==========================================
+
+model VisaStatistics {
+  id                   String                 @id @default(uuid())
+  countryId            String
+  country              Country                @relation(fields: [countryId], references: [id], onDelete: Cascade)
+  countryCode          String                 // e.g. "GB", "US", "CA", "DE", "IE", "AU", etc.
+  countryName          String
+  visaCategory         String                 // e.g. "STUDENT_VISA_ALL", "HIGHER_EDUCATION", "SUBCLASS_500", "F1_STUDENT", "STUDY_PERMIT", "NATIONAL_D_VISA"
+  educationLevel       String                 @default("ALL") // "UNDERGRADUATE", "POSTGRADUATE", "VOCATIONAL", "ALL"
+  applicantNationality String                 @default("BANGLADESH") // "BANGLADESH", "WORLDWIDE_ALL", "INDIA", etc. (NEVER MIXED)
+  applicationLocation  String                 @default("SUBMITTED_FROM_BANGLADESH") // "SUBMITTED_FROM_BANGLADESH", "WORLDWIDE", "OUTSIDE_UK", etc.
+  reportingPeriod      String                 // e.g. "Year Ending June 2024", "Calendar Year 2023", "FY 2023-24", "Q1-Q3 2024"
+  reportingPeriodType  String                 @default("ANNUAL") // "ANNUAL", "FINANCIAL_YEAR", "QUARTERLY", "PARTIAL"
+  periodStartDate      DateTime?
+  periodEndDate        DateTime?
+  applicationsDecided  Int?
+  applicationsApproved Int?
+  applicationsRefused  Int?
+  applicationsWithdrawn Int?                  @default(0)
+  approvalRate         Float?                 // (Approved ÷ Decided) × 100
+  refusalRate          Float?                 // (Refused ÷ Decided) × 100
+  calculationBasis     String?                // Explanation of numerator/denominator
+  dataCredibility      String                 @default("OFFICIAL_PUBLISHED") // "OFFICIAL_PUBLISHED", "INDEPENDENTLY_REPORTED", "ESTIMATED", "UNAVAILABLE"
+  officialSourceUrl    String
+  sourcePublicationDate DateTime?
+  lastVerifiedAt       DateTime               @default(now())
+  isOutdated           Boolean                @default(false)
+  historicalDataJson   String?                // JSON string for multi-year trends
+  adminApprovalStatus  String                 @default("APPROVED") // "APPROVED", "PENDING_REVIEW", "REJECTED"
+  notes                String?
+  createdAt            DateTime               @default(now())
+  updatedAt            DateTime               @updatedAt
+
+  sources              VisaStatisticsSource[]
+  corrections          VisaCorrectionReport[]
+}
+
+model VisaStatisticsSource {
+  id                   String         @id @default(uuid())
+  visaStatisticsId     String
+  statistics           VisaStatistics @relation(fields: [visaStatisticsId], references: [id], onDelete: Cascade)
+  title                String
+  publisher            String         // e.g. "UK Home Office Immigration Statistics", "US Department of State Visa Office", "IRCC Open Data"
+  url                  String
+  sourceType           String         @default("GOVERNMENT_STATISTICS") // "GOVERNMENT_STATISTICS", "IMMIGRATION_DEPARTMENT", "PARLIAMENTARY_INQUIRY", "FREEDOM_OF_INFORMATION"
+  dataPublicationDate  DateTime?
+  lastCheckedAt        DateTime       @default(now())
+  httpStatus           Int?           @default(200)
+}
+
+model VisaPolicy {
+  id                      String    @id @default(uuid())
+  countryId               String
+  country                 Country   @relation(fields: [countryId], references: [id], onDelete: Cascade)
+  countryCode             String
+  title                   String    // e.g. "UK Student Route Maintenance Requirement", "Germany Sperrkonto (Blocked Account)"
+  visaCategory            String
+  summary                 String
+  financialProofRequired  String?   // Maintenance / living cost requirement
+  workRightsNotes         String?   // Permitted term-time work hours
+  dependentAllowed        Boolean   @default(false)
+  dependentPolicyNotes    String?
+  processingTimeTypical   String?
+  priorityServiceAvailable Boolean   @default(false)
+  officialChecklistUrl    String
+  lastVerifiedAt          DateTime  @default(now())
+  isOutdated              Boolean   @default(false)
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
+}
+
+model VisaApplicationCentre {
+  id                         String                      @id @default(uuid())
+  countryId                  String
+  countryRef                 Country                     @relation(fields: [countryId], references: [id], onDelete: Cascade)
+  countryCode                String
+  countryName                String
+  embassyHandling            String                      // e.g. "British High Commission Dhaka", "Embassy of Lithuania in New Delhi"
+  centreName                 String                      // e.g. "VFS Global Bangladesh (Dhaka)", "VFS Global Sylhet"
+  providerName               String                      @default("VFS_GLOBAL") // "VFS_GLOBAL", "TLS_CONTACT", "EMBASSY_DIRECT", "BLS_INTERNATIONAL"
+  city                       String                      // "Dhaka", "Sylhet", "Chittagong", "New Delhi"
+  country                    String                      // "Bangladesh", "India"
+  address                    String
+  submissionInBangladesh     Boolean                     @default(true)
+  indiaTravelRequirement     String                      @default("NO") // "NO", "YES", "POSSIBLY", "UNKNOWN"
+  indiaTravelReason          String?
+  appointmentRequired        Boolean                     @default(true)
+  biometricsRequired         Boolean                     @default(true)
+  interviewRequired          String                      @default("CONDITIONAL") // "MANDATORY", "CONDITIONAL", "RARE", "NO"
+  inPersonPassportSubmission Boolean                     @default(true)
+  passportReturnAvailableInBd Boolean                    @default(true)
+  alternateRouteNotice       String?
+  officialBookingUrl         String
+  lastVerifiedAt             DateTime                    @default(now())
+  createdAt                  DateTime                    @default(now())
+  updatedAt                  DateTime                    @updatedAt
+
+  requirements               VisaCentreRequirement[]
+  jurisdictionRules          ApplicantJurisdictionRule[]
+  corrections                VisaCorrectionReport[]
+}
+
+model VisaCentreRequirement {
+  id          String                @id @default(uuid())
+  centreId    String
+  centre      VisaApplicationCentre @relation(fields: [centreId], references: [id], onDelete: Cascade)
+  title       String
+  description String
+  isMandatory Boolean               @default(true)
+}
+
+model ApplicantJurisdictionRule {
+  id                  String                 @id @default(uuid())
+  centreId            String?
+  centre              VisaApplicationCentre? @relation(fields: [centreId], references: [id], onDelete: SetNull)
+  countryId           String
+  country             Country                @relation(fields: [countryId], references: [id], onDelete: Cascade)
+  passportNationality String                 @default("BANGLADESH")
+  residenceCountry    String                 @default("BANGLADESH")
+  jurisdictionNote    String
+  specialDirectives   String?
+}
+
+model OfficialSocialAccount {
+  id            String         @id @default(uuid())
+  countryId     String
+  country       Country        @relation(fields: [countryId], references: [id], onDelete: Cascade)
+  platform      String         // "FACEBOOK", "TWITTER_X", "GOV_PORTAL"
+  accountName   String         // e.g. "UK in Bangladesh - British High Commission"
+  pageUrl       String
+  verifiedBadge Boolean        @default(true)
+  category      String         // "EMBASSY", "IMMIGRATION_DEPT", "APPLICATION_PROVIDER", "SCHOLARSHIP_BODY"
+  isActive      Boolean        @default(true)
+  lastCheckedAt DateTime       @default(now())
+
+  updates       SocialUpdate[]
+}
+
+model SocialUpdate {
+  id                 String                @id @default(uuid())
+  accountId          String
+  account            OfficialSocialAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  countryId          String
+  country            Country               @relation(fields: [countryId], references: [id], onDelete: Cascade)
+  publisher          String
+  originalPostUrl    String
+  publishedAt        DateTime
+  destinationCountry String
+  topic              String                // "STUDENT_VISA_POLICY", "VFS_APPOINTMENT_SLOTS", "FINANCIAL_REQUIREMENT", "INTERVIEW_WAIVER", "PROCESSING_TIMES"
+  summary            String
+  fullText           String?
+  isOfficialVerified Boolean               @default(true)
+  verificationStatus String                @default("VERIFIED_OFFICIAL")
+  retrievedAt        DateTime              @default(now())
+  adminApproved      Boolean               @default(true)
+  createdAt          DateTime              @default(now())
+}
+
+model SearchProviderConfiguration {
+  id                 String   @id @default(uuid())
+  providerName       String   // "LOCAL_CURATED_INDEX", "OFFICIAL_GOV_SEARCH", "SERPER_DEV", "BING_SEARCH", "CUSTOM_SEARCH"
+  isActive           Boolean  @default(true)
+  rateLimitPerMinute Int      @default(60)
+  timeoutMs          Int      @default(5000)
+  cacheTtlSeconds    Int      @default(3600)
+  lastTestedAt       DateTime @default(now())
+  status             String   @default("OPERATIONAL") // "OPERATIONAL", "DEGRADED", "FALLBACK_ACTIVE"
+}
+
+model SourceVerification {
+  id                  String           @id @default(uuid())
+  entityType          String           // "STATISTICS", "VISA_CENTRE", "POLICY", "SOCIAL_UPDATE"
+  entityId            String
+  title               String
+  sourceUrl           String
+  publisher           String
+  dataPublicationDate DateTime?
+  dateRetrieved       DateTime         @default(now())
+  lastVerifiedDate    DateTime         @default(now())
+  reportingPeriod     String?
+  verificationStatus  String           @default("VERIFIED_OFFICIAL") // "VERIFIED_OFFICIAL", "AWAITING_REVIEW", "SECONDARY_SOURCE", "OUTDATED", "CONFLICTING_SOURCES", "VERIFICATION_REQUIRED"
+  reviewerId          String?
+  notes               String?
+
+  revisions           SourceRevision[]
+}
+
+model SourceRevision {
+  id                   String             @id @default(uuid())
+  sourceVerificationId String
+  verification         SourceVerification @relation(fields: [sourceVerificationId], references: [id], onDelete: Cascade)
+  changedBy            String
+  changeType           String             // "CREATED", "UPDATED", "STATUS_CHANGED", "REFRESHED"
+  previousData         String?
+  newData              String
+  changeReason         String?
+  timestamp            DateTime           @default(now())
+}
+
+model VisaCorrectionReport {
+  id            String                 @id @default(uuid())
+  userId        String?
+  user          User?                  @relation(fields: [userId], references: [id], onDelete: SetNull)
+  reporterEmail String?
+  reporterName  String?
+  targetType    String                 // "STATISTICS", "VISA_CENTRE", "POLICY", "INDIA_TRAVEL_REQUIREMENT"
+  statisticsId  String?
+  statistics    VisaStatistics?        @relation(fields: [statisticsId], references: [id], onDelete: SetNull)
+  centreId      String?
+  centre        VisaApplicationCentre? @relation(fields: [centreId], references: [id], onDelete: SetNull)
+  countryName   String
+  issueCategory String                 // "INCORRECT_APPROVAL_RATE", "OUTDATED_STATISTICS", "INCORRECT_CENTRE_LOCATION", "INCORRECT_INDIA_TRAVEL", "BROKEN_LINK", "MISLEADING_REQUIREMENT", "OUTDATED_FEE_OR_TIME", "OTHER"
+  description   String
+  evidenceUrl   String?
+  evidenceText  String?
+  status        String                 @default("PENDING") // "PENDING", "APPROVED", "REJECTED"
+  adminNotes    String?
+  reviewedBy    String?
+  reviewedAt    DateTime?
+  createdAt     DateTime               @default(now())
+  updatedAt     DateTime               @updatedAt
+}
+
+model DataIngestionJob {
+  id               String           @id @default(uuid())
+  jobName          String
+  jobType          String           // "VISA_STATISTICS_INGEST", "CENTRE_DIRECTORY_SYNC", "SOCIAL_FEED_SYNC"
+  sourceName       String
+  recordsProcessed Int              @default(0)
+  recordsCreated   Int              @default(0)
+  recordsUpdated   Int              @default(0)
+  recordsFailed    Int              @default(0)
+  status           String           @default("COMPLETED") // "COMPLETED", "IN_PROGRESS", "FAILED"
+  startedAt        DateTime         @default(now())
+  completedAt      DateTime?
+
+  errors           IngestionError[]
+}
+
+model IngestionError {
+  id               String           @id @default(uuid())
+  jobId            String
+  job              DataIngestionJob @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  recordIdentifier String?
+  errorMessage     String
+  errorStack       String?
+  timestamp        DateTime         @default(now())
+}
+
+
+
+
+
+
