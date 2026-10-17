@@ -10,7 +10,9 @@
     "dev:all": "node scripts/dev.js",
     "build:client": "npm --prefix client run build",
     "build:server": "npm --prefix server run build",
-    "build": "npm run build:client && npm run build:server"
+    "build": "npm run build:client && npm run build:server",
+    "db:push": "npm --prefix server run prisma:generate && npx --prefix server prisma db push",
+    "db:seed": "npm --prefix server run prisma:seed"
   },
   "keywords": [
     "study-abroad",

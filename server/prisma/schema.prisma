@@ -1,6 +1,6 @@
-// Borno Higher Study - Comprehensive PostgreSQL Schema
+// Borno Higher Study - SQLite Prisma Schema
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
 }
 
@@ -8,57 +8,12 @@ generator client {
   provider = "prisma-client-js"
 }
 
-enum Role {
-  SUPER_ADMIN
-  DATA_EDITOR
-  DATA_REVIEWER
-  STUDENT
-}
-
-enum UniversityType {
-  PUBLIC
-  PRIVATE
-  SEMI_GOVERNMENT
-  OTHER
-}
-
-enum DegreeLevel {
-  BACHELOR
-  MASTER
-  PHD
-  DIPLOMA
-}
-
-enum ScholarshipType {
-  GOVERNMENT
-  UNIVERSITY_MERIT
-  NEED_BASED
-  TUITION_WAIVER
-  RESEARCH_ASSISTANTSHIP
-  TEACHING_ASSISTANTSHIP
-  FULLY_FUNDED
-}
-
-enum VerificationStatus {
-  VERIFIED
-  PENDING_REVIEW
-  NEEDS_UPDATE
-  CONFLICT_DETECTED
-}
-
-enum TaskStatus {
-  NOT_STARTED
-  IN_PROGRESS
-  COMPLETED
-  OVERDUE
-}
-
 model User {
   id            String    @id @default(uuid())
   email         String    @unique
   passwordHash  String
   name          String
-  role          Role      @default(STUDENT)
+  role          String    @default("STUDENT") // SUPER_ADMIN, DATA_EDITOR, DATA_REVIEWER, STUDENT
   avatarUrl     String?
   targetCountry String?
   targetDegree  String?
@@ -80,18 +35,22 @@ model Country {
   slug               String   @unique
   code               String   @unique // e.g. FI, DE, US, NL
   flagEmoji          String
+  continent          String   @default("Europe")
+  region             String   @default("Northern Europe")
   currencyCode       String
   currencySymbol     String
   exchangeRateToBdt  Float    // e.g. 1 EUR = ~128 BDT
-  overview           String   @db.Text
+  overview           String
   capitalCity        String
-  majorCities        String[] // Array of major student cities
+  majorCities        String   @default("[]") // JSON-serialized array of major student cities
+  languages          String   @default("[]") // JSON-serialized array of languages
   avgLivingCostMonthly Float  // in local currency
   avgTuitionMin      Float
   avgTuitionMax      Float
-  postStudyWorkVisa  String   @db.Text
+  postStudyWorkVisa  String
   visaGuideUrl       String
   officialPortalUrl  String
+  isFeatured         Boolean  @default(false)
   lastVerifiedAt     DateTime @default(now())
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
@@ -124,14 +83,15 @@ model University {
   coverImageUrl      String?
   countryId          String
   country            Country            @relation(fields: [countryId], references: [id])
-  cityId             String
-  city               City               @relation(fields: [cityId], references: [id])
+  cityId             String?
+  city               City?              @relation(fields: [cityId], references: [id])
+  cityName           String?            // Denormalized for convenience
   address            String?
   websiteUrl         String
   admissionsUrl      String
-  type               UniversityType     @default(PUBLIC)
-  levelsOffered      DegreeLevel[]
-  verificationStatus VerificationStatus @default(VERIFIED)
+  type               String             @default("PUBLIC") // PUBLIC, PRIVATE, SEMI_GOVERNMENT, OTHER
+  levelsOffered      String             @default("BACHELOR,MASTER,PHD") // Comma-delimited
+  verificationStatus String             @default("VERIFIED") // VERIFIED, PENDING_REVIEW, NEEDS_UPDATE, CONFLICT_DETECTED
   lastVerifiedAt     DateTime           @default(now())
   qsRanking          Int?
   timesRanking       Int?
@@ -179,7 +139,7 @@ model Subject {
   name        String    @unique
   slug        String    @unique
   category    String    // e.g. "Computing and Technology", "Engineering", "Business"
-  description String?   @db.Text
+  description String?
 
   programs    Program[]
 }
@@ -192,9 +152,11 @@ model Program {
   university         University         @relation(fields: [universityId], references: [id], onDelete: Cascade)
   facultyId          String?
   faculty            Faculty?           @relation(fields: [facultyId], references: [id])
-  subjectId          String
-  subject            Subject            @relation(fields: [subjectId], references: [id])
-  degreeLevel        DegreeLevel
+  subjectId          String?
+  subject            Subject?           @relation(fields: [subjectId], references: [id])
+  subjectName        String?            // Denormalized
+  subjectCategory    String?            // Denormalized
+  degreeLevel        String             // BACHELOR, MASTER, PHD, DIPLOMA
   durationMonths     Int                // e.g. 24 for 2-year Master's
   creditsEcts        Int?               // e.g. 120 ECTS
   languageOfInstruction String          @default("English")
@@ -203,8 +165,8 @@ model Program {
   applicationFeeLocal Float             @default(0)
   programUrl         String
   curriculumUrl      String?
-  prerequisites      String?            @db.Text
-  verificationStatus VerificationStatus @default(VERIFIED)
+  prerequisites      String?
+  verificationStatus String             @default("VERIFIED")
   lastVerifiedAt     DateTime           @default(now())
   createdAt          DateTime           @default(now())
   updatedAt          DateTime           @updatedAt
@@ -227,7 +189,7 @@ model ProgramRequirement {
   gmatRequired           Boolean  @default(false)
   minGmatScore           Int?
   workExperienceMonths   Int      @default(0)
-  requiredDocuments      String[] // ["Passport", "Academic Transcripts", "Motivation Letter", "2 Recommendation Letters"]
+  requiredDocuments      String   @default("[]") // JSON string of required documents
   portfolioRequired      Boolean  @default(false)
   interviewRequired      Boolean  @default(false)
   updatedAt              DateTime @updatedAt
@@ -256,9 +218,9 @@ model EnglishRequirement {
   pteWriting             Int?
   duolingoScore          Int?
   moeAccepted            Boolean     @default(false) // Medium of instruction exemption accepted?
-  moeDetails             String?     @db.Text
+  moeDetails             String?
   testValidityYears      Int         @default(2)
-  notes                  String?     @db.Text
+  notes                  String?
   sourceUrl              String
   lastVerifiedAt         DateTime    @default(now())
 }
@@ -282,28 +244,28 @@ model Scholarship {
   id                     String          @id @default(uuid())
   name                   String
   provider               String
-  type                   ScholarshipType @default(GOVERNMENT)
+  type                   String          @default("GOVERNMENT") // GOVERNMENT, UNIVERSITY_MERIT, NEED_BASED, etc.
   countryId              String?
   country                Country?        @relation(fields: [countryId], references: [id])
   universityId           String?
   university             University?     @relation(fields: [universityId], references: [id])
   programId              String?
   program                Program?        @relation(fields: [programId], references: [id])
-  degreeLevels           DegreeLevel[]
+  degreeLevels           String          @default("MASTER,PHD") // Comma-delimited
   coveragePercent        Float           @default(100) // 100 for full tuition
   stipendMonthlyLocal    Float           @default(0)
   travelAllowanceLocal   Float           @default(0)
   currencyCode           String
   isFullyFunded          Boolean         @default(false)
   openToBangladesh       Boolean         @default(true)
-  eligibleNationalities  String[]
-  academicRequirements  String          @db.Text
-  languageRequirements  String?         @db.Text
+  eligibleNationalities  String          @default("[]") // JSON string of nationalities
+  academicRequirements  String
+  languageRequirements  String?
   deadlineDate           DateTime?
   deadlineText           String?
   officialApplicationUrl String
   sourceUrl              String
-  verificationStatus     VerificationStatus @default(VERIFIED)
+  verificationStatus     String          @default("VERIFIED")
   lastVerifiedAt         DateTime        @default(now())
   createdAt              DateTime        @default(now())
   updatedAt              DateTime        @updatedAt
@@ -352,8 +314,8 @@ model VerificationHistory {
   universityId String
   university   University         @relation(fields: [universityId], references: [id], onDelete: Cascade)
   verifiedBy   String             // User ID or "SYSTEM_IMPORT"
-  status       VerificationStatus
-  notes        String?            @db.Text
+  status       String             @default("VERIFIED")
+  notes        String?
   verifiedAt   DateTime           @default(now())
 }
 
@@ -387,7 +349,7 @@ model ApplicationPlan {
   targetDegree    String
   intake          String            // e.g. "Autumn 2025"
   estimatedBudget Float?
-  notes           String?           @db.Text
+  notes           String?
   createdAt       DateTime          @default(now())
   updatedAt       DateTime          @updatedAt
 
@@ -402,7 +364,7 @@ model ApplicationTask {
   description String?
   category    String          // "Documents", "Testing", "Application", "Visa", "Finance"
   dueDate     DateTime?
-  status      TaskStatus      @default(NOT_STARTED)
+  status      String          @default("NOT_STARTED")
   order       Int             @default(0)
 }
 
@@ -422,9 +384,9 @@ model AgentMessage {
   conversationId String
   conversation   AgentConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
   sender         String            // "user" or "agent"
-  content        String            @db.Text
-  citations      Json?             // Array of { title, url, verifiedDate, entityType }
-  structuredData Json?             // Array of universities/courses extracted
+  content        String
+  citations      String?           // JSON string of { title, url, verifiedDate, entityType }
+  structuredData String?           // JSON string of universities/courses extracted
   createdAt      DateTime          @default(now())
 }
 
@@ -436,7 +398,7 @@ model ImportJob {
   validRecords   Int                @default(0)
   invalidRecords Int                @default(0)
   status         String             // "COMPLETED", "FAILED", "IN_PROGRESS"
-  errorLog       String?            @db.Text
+  errorLog       String?
   createdAt      DateTime           @default(now())
   completedAt    DateTime?
 }
@@ -448,6 +410,6 @@ model AuditLog {
   action     String   // e.g. "UPDATE_UNIVERSITY", "VERIFY_COURSE", "IMPORT_DATA"
   entityType String   // "University", "Program", "Scholarship", "Country"
   entityId   String
-  details    Json?
+  details    String?  // JSON string
   timestamp  DateTime @default(now())
 }

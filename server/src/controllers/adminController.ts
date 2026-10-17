@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { UNIVERSITIES_DATA, UniversityRecord } from '../data/universitiesData.js';
 import { COUNTRIES_DATA } from '../data/countriesData.js';
 import { SCHOLARSHIPS_DATA } from '../data/scholarshipsData.js';
+import { prisma } from '../services/db.js';
 
 interface ImportJob {
   id: string;
@@ -92,7 +93,7 @@ export const getAdminStats = (req: Request, res: Response) => {
   });
 };
 
-export const updateUniversityVerification = (req: Request, res: Response) => {
+export const updateUniversityVerification = async (req: Request, res: Response) => {
   const { id } = req.params;
   const { status, notes } = req.body;
 
@@ -103,6 +104,28 @@ export const updateUniversityVerification = (req: Request, res: Response) => {
 
   uni.verificationStatus = status;
   uni.lastVerifiedAt = new Date().toISOString();
+
+  // Also persist to SQLite database
+  try {
+    await prisma.university.updateMany({
+      where: { id },
+      data: {
+        verificationStatus: status,
+        lastVerifiedAt: new Date(),
+      },
+    });
+
+    await prisma.auditLog.create({
+      data: {
+        action: `STATUS_${status}`,
+        entityType: 'University',
+        entityId: id,
+        details: JSON.stringify({ notes: notes || `Updated verification status to ${status}` }),
+      },
+    });
+  } catch (err) {
+    console.warn('SQLite audit log persistence notice:', err);
+  }
 
   AUDIT_LOGS.unshift({
     id: `aud-${Date.now()}`,

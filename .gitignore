@@ -13,4 +13,7 @@ coverage/
 .prisma/
 prisma/*.db
 prisma/*.db-journal
+server/prisma/*.db
+server/prisma/*.db-journal
+*.db
 scratch/

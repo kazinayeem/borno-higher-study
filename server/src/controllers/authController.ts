@@ -1,52 +1,9 @@
 import { Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import { prisma } from '../services/db.js';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'borno-higher-study-super-secret-key-2025';
-
-// Mock in-memory persistence for authentication when database is in transition / zero-friction mode
-interface StoredUser {
-  id: string;
-  email: string;
-  passwordHash: string;
-  name: string;
-  role: 'SUPER_ADMIN' | 'DATA_EDITOR' | 'DATA_REVIEWER' | 'STUDENT';
-  savedUniversityIds: string[];
-  savedScholarshipIds: string[];
-  targetCountry?: string;
-  targetDegree?: string;
-}
-
-const USERS_STORE: Map<string, StoredUser> = new Map([
-  [
-    'admin@borno.edu',
-    {
-      id: 'usr-admin-1',
-      email: 'admin@borno.edu',
-      passwordHash: bcrypt.hashSync('BornoAdmin2025!', 10),
-      name: 'Borno System Administrator',
-      role: 'SUPER_ADMIN',
-      savedUniversityIds: ['uni-aalto', 'uni-tum'],
-      savedScholarshipIds: ['sch-finland-gov', 'sch-daad-epos'],
-      targetCountry: 'finland',
-      targetDegree: 'MASTER',
-    },
-  ],
-  [
-    'student@borno.edu',
-    {
-      id: 'usr-student-1',
-      email: 'student@borno.edu',
-      passwordHash: bcrypt.hashSync('Student2025!', 10),
-      name: 'Rahim Chowdhury',
-      role: 'STUDENT',
-      savedUniversityIds: ['uni-aalto', 'uni-tudelft'],
-      savedScholarshipIds: ['sch-finland-gov'],
-      targetCountry: 'finland',
-      targetDegree: 'MASTER',
-    },
-  ],
-]);
 
 export const register = async (req: Request, res: Response) => {
   const { email, password, name, role = 'STUDENT' } = req.body;
@@ -55,43 +12,50 @@ export const register = async (req: Request, res: Response) => {
     return res.status(400).json({ error: 'Name, email, and password are required.' });
   }
 
-  const existing = USERS_STORE.get(email.toLowerCase());
-  if (existing) {
-    return res.status(400).json({ error: 'User with this email already exists.' });
+  const normalizedEmail = email.toLowerCase().trim();
+
+  try {
+    const existing = await prisma.user.findUnique({
+      where: { email: normalizedEmail },
+    });
+
+    if (existing) {
+      return res.status(400).json({ error: 'User with this email already exists.' });
+    }
+
+    const salt = await bcrypt.genSalt(10);
+    const passwordHash = await bcrypt.hash(password, salt);
+
+    const newUser = await prisma.user.create({
+      data: {
+        email: normalizedEmail,
+        passwordHash,
+        name,
+        role: role === 'SUPER_ADMIN' ? 'STUDENT' : role, // Prevent self-elevation to super admin
+      },
+    });
+
+    const token = jwt.sign(
+      { id: newUser.id, email: newUser.email, role: newUser.role, name: newUser.name },
+      JWT_SECRET,
+      { expiresIn: '7d' }
+    );
+
+    return res.status(201).json({
+      token,
+      user: {
+        id: newUser.id,
+        email: newUser.email,
+        name: newUser.name,
+        role: newUser.role,
+        savedUniversityIds: [],
+        savedScholarshipIds: [],
+      },
+    });
+  } catch (error) {
+    console.error('Registration error in SQLite:', error);
+    return res.status(500).json({ error: 'Failed to create user account.' });
   }
-
-  const salt = await bcrypt.genSalt(10);
-  const passwordHash = await bcrypt.hash(password, salt);
-
-  const newUser: StoredUser = {
-    id: `usr-${Date.now()}`,
-    email: email.toLowerCase(),
-    passwordHash,
-    name,
-    role: role === 'SUPER_ADMIN' ? 'STUDENT' : role, // Prevent self-elevation to super admin
-    savedUniversityIds: [],
-    savedScholarshipIds: [],
-  };
-
-  USERS_STORE.set(newUser.email, newUser);
-
-  const token = jwt.sign(
-    { id: newUser.id, email: newUser.email, role: newUser.role, name: newUser.name },
-    JWT_SECRET,
-    { expiresIn: '7d' }
-  );
-
-  return res.status(201).json({
-    token,
-    user: {
-      id: newUser.id,
-      email: newUser.email,
-      name: newUser.name,
-      role: newUser.role,
-      savedUniversityIds: newUser.savedUniversityIds,
-      savedScholarshipIds: newUser.savedScholarshipIds,
-    },
-  });
 };
 
 export const login = async (req: Request, res: Response) => {
@@ -101,97 +65,184 @@ export const login = async (req: Request, res: Response) => {
     return res.status(400).json({ error: 'Email and password are required.' });
   }
 
-  const user = USERS_STORE.get(email.toLowerCase());
-  if (!user) {
-    return res.status(401).json({ error: 'Invalid email or password.' });
+  const normalizedEmail = email.toLowerCase().trim();
+
+  try {
+    const user = await prisma.user.findUnique({
+      where: { email: normalizedEmail },
+      include: {
+        savedUniversities: true,
+        savedScholarships: true,
+      },
+    });
+
+    if (!user) {
+      return res.status(401).json({ error: 'Invalid email or password.' });
+    }
+
+    const valid = await bcrypt.compare(password, user.passwordHash);
+    if (!valid) {
+      return res.status(401).json({ error: 'Invalid email or password.' });
+    }
+
+    const token = jwt.sign(
+      { id: user.id, email: user.email, role: user.role, name: user.name },
+      JWT_SECRET,
+      { expiresIn: '7d' }
+    );
+
+    const savedUniversityIds = user.savedUniversities.map((s) => s.universityId);
+    const savedScholarshipIds = user.savedScholarships.map((s) => s.scholarshipId);
+
+    return res.json({
+      token,
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        role: user.role,
+        savedUniversityIds,
+        savedScholarshipIds,
+        targetCountry: user.targetCountry,
+        targetDegree: user.targetDegree,
+      },
+    });
+  } catch (error) {
+    console.error('Login error in SQLite:', error);
+    return res.status(500).json({ error: 'Authentication failed.' });
   }
-
-  const valid = await bcrypt.compare(password, user.passwordHash);
-  if (!valid) {
-    return res.status(401).json({ error: 'Invalid email or password.' });
-  }
-
-  const token = jwt.sign(
-    { id: user.id, email: user.email, role: user.role, name: user.name },
-    JWT_SECRET,
-    { expiresIn: '7d' }
-  );
-
-  return res.json({
-    token,
-    user: {
-      id: user.id,
-      email: user.email,
-      name: user.name,
-      role: user.role,
-      savedUniversityIds: user.savedUniversityIds,
-      savedScholarshipIds: user.savedScholarshipIds,
-      targetCountry: user.targetCountry,
-      targetDegree: user.targetDegree,
-    },
-  });
 };
 
-export const getProfile = (req: Request, res: Response) => {
-  // Provided by auth middleware
+export const getProfile = async (req: Request, res: Response) => {
   const user = (req as any).user;
   if (!user) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
-  const stored = USERS_STORE.get(user.email);
-  if (!stored) {
-    return res.status(404).json({ error: 'User record not found.' });
-  }
+  try {
+    const stored = await prisma.user.findUnique({
+      where: { id: user.id },
+      include: {
+        savedUniversities: true,
+        savedScholarships: true,
+      },
+    });
 
-  return res.json({
-    id: stored.id,
-    email: stored.email,
-    name: stored.name,
-    role: stored.role,
-    savedUniversityIds: stored.savedUniversityIds,
-    savedScholarshipIds: stored.savedScholarshipIds,
-    targetCountry: stored.targetCountry,
-    targetDegree: stored.targetDegree,
-  });
+    if (!stored) {
+      return res.status(404).json({ error: 'User record not found.' });
+    }
+
+    const savedUniversityIds = stored.savedUniversities.map((s) => s.universityId);
+    const savedScholarshipIds = stored.savedScholarships.map((s) => s.scholarshipId);
+
+    return res.json({
+      id: stored.id,
+      email: stored.email,
+      name: stored.name,
+      role: stored.role,
+      savedUniversityIds,
+      savedScholarshipIds,
+      targetCountry: stored.targetCountry,
+      targetDegree: stored.targetDegree,
+    });
+  } catch (error) {
+    console.error('Get profile error in SQLite:', error);
+    return res.status(500).json({ error: 'Failed to fetch user profile.' });
+  }
 };
 
-export const toggleSaveUniversity = (req: Request, res: Response) => {
+export const toggleSaveUniversity = async (req: Request, res: Response) => {
   const user = (req as any).user;
   const { universityId } = req.body;
 
-  const stored = USERS_STORE.get(user.email);
-  if (!stored) return res.status(404).json({ error: 'User not found' });
-
-  const idx = stored.savedUniversityIds.indexOf(universityId);
-  if (idx > -1) {
-    stored.savedUniversityIds.splice(idx, 1);
-  } else {
-    stored.savedUniversityIds.push(universityId);
+  if (!user || !universityId) {
+    return res.status(400).json({ error: 'Invalid user or university ID.' });
   }
 
-  return res.json({
-    savedUniversityIds: stored.savedUniversityIds,
-    isSaved: stored.savedUniversityIds.includes(universityId),
-  });
+  try {
+    const existing = await prisma.savedUniversity.findUnique({
+      where: {
+        userId_universityId: {
+          userId: user.id,
+          universityId,
+        },
+      },
+    });
+
+    if (existing) {
+      await prisma.savedUniversity.delete({
+        where: { id: existing.id },
+      });
+    } else {
+      await prisma.savedUniversity.create({
+        data: {
+          userId: user.id,
+          universityId,
+        },
+      });
+    }
+
+    const updatedSaves = await prisma.savedUniversity.findMany({
+      where: { userId: user.id },
+      select: { universityId: true },
+    });
+
+    const savedIds = updatedSaves.map((s) => s.universityId);
+
+    return res.json({
+      savedUniversityIds: savedIds,
+      isSaved: savedIds.includes(universityId),
+    });
+  } catch (error) {
+    console.error('Error toggling saved university:', error);
+    return res.status(500).json({ error: 'Could not toggle save university.' });
+  }
 };
 
-export const toggleSaveScholarship = (req: Request, res: Response) => {
+export const toggleSaveScholarship = async (req: Request, res: Response) => {
   const user = (req as any).user;
   const { scholarshipId } = req.body;
 
-  const stored = USERS_STORE.get(user.email);
-  if (!stored) return res.status(404).json({ error: 'User not found' });
-
-  const idx = stored.savedScholarshipIds.indexOf(scholarshipId);
-  if (idx > -1) {
-    stored.savedScholarshipIds.splice(idx, 1);
-  } else {
-    stored.savedScholarshipIds.push(scholarshipId);
+  if (!user || !scholarshipId) {
+    return res.status(400).json({ error: 'Invalid user or scholarship ID.' });
   }
 
-  return res.json({
-    savedScholarshipIds: stored.savedScholarshipIds,
-    isSaved: stored.savedScholarshipIds.includes(scholarshipId),
-  });
+  try {
+    const existing = await prisma.savedScholarship.findUnique({
+      where: {
+        userId_scholarshipId: {
+          userId: user.id,
+          scholarshipId,
+        },
+      },
+    });
+
+    if (existing) {
+      await prisma.savedScholarship.delete({
+        where: { id: existing.id },
+      });
+    } else {
+      await prisma.savedScholarship.create({
+        data: {
+          userId: user.id,
+          scholarshipId,
+        },
+      });
+    }
+
+    const updatedSaves = await prisma.savedScholarship.findMany({
+      where: { userId: user.id },
+      select: { scholarshipId: true },
+    });
+
+    const savedIds = updatedSaves.map((s) => s.scholarshipId);
+
+    return res.json({
+      savedScholarshipIds: savedIds,
+      isSaved: savedIds.includes(scholarshipId),
+    });
+  } catch (error) {
+    console.error('Error toggling saved scholarship:', error);
+    return res.status(500).json({ error: 'Could not toggle save scholarship.' });
+  }
 };
