@@ -15,6 +15,8 @@ import {
   ArrowLeft,
   FileCheck,
 } from 'lucide-react';
+import { SeoHead } from '../components/common/SeoHead.js';
+import { Breadcrumbs } from '../components/common/Breadcrumbs.js';
 
 export const CourseDetailsPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -51,14 +53,30 @@ export const CourseDetailsPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-slate-50 py-10">
+      <SeoHead
+        title={`${program.name} — ${program.universityName || 'Degree Program'}`}
+        description={`Verified syllabus and admission requirements for ${program.name} (${program.degreeLevel}) at ${program.universityName || 'university'}. Annual tuition ${program.annualTuitionLocal} ${program.currencyCode}, IELTS ${program.ieltsOverall}, and intake dates.`}
+        canonicalPath={`/courses/${program.id}`}
+        structuredData={{
+          '@context': 'https://schema.org',
+          '@type': 'Course',
+          name: program.name,
+          description: program.prerequisites,
+          provider: {
+            '@type': 'CollegeOrUniversity',
+            name: program.universityName || 'University',
+          },
+        }}
+      />
+
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
-        <Link
-          to="/courses"
-          className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-brand-navy"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          <span>Back to Course Catalog</span>
-        </Link>
+        <Breadcrumbs
+          items={[
+            { label: 'Courses', href: '/courses' },
+            { label: program.name },
+          ]}
+        />
+
 
         {/* Hero Card */}
         <div className="bg-white rounded-3xl border border-slate-200/90 shadow-card p-8 sm:p-10">

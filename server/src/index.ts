@@ -3,6 +3,15 @@ import cors from 'cors';
 import morgan from 'morgan';
 import dotenv from 'dotenv';
 import apiRouter from './routes/api.js';
+import {
+  getRobotsTxt,
+  getSitemapIndex,
+  getMainSitemap,
+  getCountriesSitemap,
+  getUniversitiesSitemap,
+  getProgramsSitemap,
+  getScholarshipsSitemap,
+} from './controllers/seoController.js';
 
 dotenv.config();
 
@@ -17,6 +26,15 @@ app.use(cors({
 app.use(express.json({ limit: '10mb' }));
 app.use(morgan('dev'));
 
+// Technical SEO Routes (Robots.txt & XML Sitemaps)
+app.get('/robots.txt', getRobotsTxt);
+app.get('/sitemap.xml', getSitemapIndex);
+app.get('/sitemap-main.xml', getMainSitemap);
+app.get('/sitemap-countries.xml', getCountriesSitemap);
+app.get('/sitemap-universities.xml', getUniversitiesSitemap);
+app.get('/sitemap-programs.xml', getProgramsSitemap);
+app.get('/sitemap-scholarships.xml', getScholarshipsSitemap);
+
 // Health check
 app.get('/api/health', (req: Request, res: Response) => {
   res.json({
@@ -29,6 +47,7 @@ app.get('/api/health', (req: Request, res: Response) => {
 
 // Mount API routes
 app.use('/api', apiRouter);
+
 
 // Global Error Handler
 app.use((err: any, req: Request, res: Response, next: NextFunction) => {

@@ -20,6 +20,10 @@ export interface Country {
   englishReqSummary: string;
   applicationPeriod: string;
   lastVerifiedAt: string;
+  continent?: string;
+  region?: string;
+  languages?: string[];
+  isFeatured?: boolean;
   universityCount?: number;
   scholarshipCount?: number;
 }

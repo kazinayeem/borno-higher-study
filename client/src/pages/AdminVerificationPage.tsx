@@ -11,6 +11,8 @@ import {
   Search,
   ExternalLink,
 } from 'lucide-react';
+import { SeoHead } from '../components/common/SeoHead.js';
+
 
 const SAMPLE_CSV = `name,country,city,tuition
 Aalto University,Finland,Espoo,15000
@@ -79,6 +81,12 @@ export const AdminVerificationPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-slate-50 py-10">
+      <SeoHead
+        title="Data Verification & Import Pipeline | Borno Higher Study"
+        description="Administrative verification portal."
+        canonicalPath="/admin/verify"
+        noIndex={true}
+      />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
         <Link
           to="/admin"

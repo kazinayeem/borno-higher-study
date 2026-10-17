@@ -20,6 +20,8 @@ import {
   ArrowLeft,
   CheckCircle2,
 } from 'lucide-react';
+import { SeoHead } from '../components/common/SeoHead.js';
+import { Breadcrumbs } from '../components/common/Breadcrumbs.js';
 
 export const UniversityDetailsPage: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -59,15 +61,31 @@ export const UniversityDetailsPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-slate-50 py-10">
+      <SeoHead
+        title={`${university.name} — Programs, Tuition Fees & Admissions`}
+        description={`Explore verified degrees, annual tuition fees, English test requirements, and official international admissions for ${university.name} in ${university.cityName}, ${university.countryName}.`}
+        canonicalPath={`/universities/${university.slug}`}
+        structuredData={{
+          '@context': 'https://schema.org',
+          '@type': 'CollegeOrUniversity',
+          name: university.name,
+          url: university.websiteUrl,
+          address: {
+            '@type': 'PostalAddress',
+            addressLocality: university.cityName,
+            addressCountry: university.countryName,
+          },
+        }}
+      />
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
-        {/* Navigation Breadcrumb */}
-        <Link
-          to="/universities"
-          className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-brand-navy"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          <span>Back to University Catalog</span>
-        </Link>
+        <Breadcrumbs
+          items={[
+            { label: 'Universities', href: '/universities' },
+            { label: university.name },
+          ]}
+        />
+
 
         {/* Hero Card */}
         <div className="bg-white rounded-3xl border border-slate-200/90 shadow-card p-8 sm:p-10">

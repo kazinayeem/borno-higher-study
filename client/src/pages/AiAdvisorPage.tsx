@@ -2,6 +2,8 @@ import React, { useState, useRef, useEffect } from 'react';
 import { consultAdvisor } from '../services/api.js';
 import { Sparkles, Send, ShieldCheck, ExternalLink, Bot, User, Bookmark, ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { SeoHead } from '../components/common/SeoHead.js';
+
 
 interface Message {
   id: string;
@@ -77,6 +79,11 @@ export const AiAdvisorPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-slate-50 py-8">
+      <SeoHead
+        title="AI Study Advisor — Grounded International Education Guidance | Borno Higher Study"
+        description="Consult the Borno AI Study Advisor for verified university recommendations, Master's admissions criteria, government scholarship eligibility, and study budget comparisons."
+        canonicalPath="/advisor"
+      />
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
         {/* Header Banner */}
         <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-card flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">

@@ -3,6 +3,8 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.js';
 import { Logo } from '../components/common/Logo.js';
 import { Lock, Mail, User, ShieldCheck, ArrowRight, KeyRound } from 'lucide-react';
+import { SeoHead } from '../components/common/SeoHead.js';
+
 
 export const AuthPage: React.FC = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -53,6 +55,12 @@ export const AuthPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-slate-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+      <SeoHead
+        title="Sign In / Register | Borno Higher Study"
+        description="Sign in or register for your Borno Higher Study account."
+        canonicalPath="/auth"
+        noIndex={true}
+      />
       <div className="max-w-md w-full space-y-6">
         <div className="text-center">
           <Logo className="justify-center" />

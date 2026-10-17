@@ -13,6 +13,7 @@ import {
   ArrowRight,
   ShieldCheck,
 } from 'lucide-react';
+import { SeoHead } from '../components/common/SeoHead.js';
 
 export const StudentDashboardPage: React.FC = () => {
   const { user } = useAuth();
@@ -20,6 +21,12 @@ export const StudentDashboardPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-slate-50 py-10">
+      <SeoHead
+        title="Student Dashboard | Borno Higher Study"
+        description="Private student application planning and dashboard."
+        canonicalPath="/dashboard"
+        noIndex={true}
+      />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
         {/* Welcome Banner */}
         <div className="bg-gradient-to-r from-brand-navy via-brand-navy-light to-teal-900 rounded-3xl p-8 sm:p-10 text-white shadow-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-6">

@@ -17,6 +17,10 @@ import {
   ArrowLeft,
 } from 'lucide-react';
 
+import { SeoHead } from '../components/common/SeoHead.js';
+import { Breadcrumbs } from '../components/common/Breadcrumbs.js';
+import { COUNTRIES_DATA } from '../data/countriesData.js';
+
 export const CountryDetailsPage: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
   const [data, setData] = useState<{
@@ -48,18 +52,31 @@ export const CountryDetailsPage: React.FC = () => {
 
   const { country, universities, scholarships } = data;
   const livingCostBdt = Math.round(country.avgLivingCostMonthly * country.exchangeRateToBdt);
+  const relatedCountries = COUNTRIES_DATA.filter((c) => c.continent === country.continent && c.slug !== country.slug).slice(0, 3);
 
   return (
     <div className="min-h-screen bg-slate-50 py-10">
+      <SeoHead
+        title={`Study in ${country.name} — Universities, Tuition & Living Costs`}
+        description={`Comprehensive guide to higher education in ${country.name}. Discover recognized universities, tuition fees in ${country.currencyCode} & BDT, post-study work visa rights, and scholarships.`}
+        canonicalPath={`/countries/${country.slug}`}
+        structuredData={{
+          '@context': 'https://schema.org',
+          '@type': 'Country',
+          name: country.name,
+          description: country.overview,
+          currenciesAccepted: country.currencyCode,
+        }}
+      />
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
-        {/* Back Link */}
-        <Link
-          to="/countries"
-          className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-brand-navy"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          <span>Back to All 30 Destinations</span>
-        </Link>
+        <Breadcrumbs
+          items={[
+            { label: 'Countries', href: '/countries' },
+            { label: country.name },
+          ]}
+        />
+
 
         {/* Hero Card */}
         <div className="bg-white rounded-3xl border border-slate-200/90 shadow-card p-8 sm:p-10">

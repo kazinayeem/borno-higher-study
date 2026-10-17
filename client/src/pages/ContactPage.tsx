@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Mail, MapPin, Phone, MessageSquare, Send, CheckCircle2 } from 'lucide-react';
+import { SeoHead } from '../components/common/SeoHead.js';
 
 export const ContactPage: React.FC = () => {
   const [submitted, setSubmitted] = useState(false);
@@ -11,6 +12,11 @@ export const ContactPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-slate-50 py-16">
+      <SeoHead
+        title="Contact Institutional Support | Borno Higher Study"
+        description="Get in touch with Borno Higher Study for institutional partnership, data verification requests, or student advising inquiries."
+        canonicalPath="/contact"
+      />
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
         <div className="text-center max-w-2xl mx-auto space-y-3">
           <h1 className="text-3xl sm:text-4xl font-extrabold text-brand-navy">

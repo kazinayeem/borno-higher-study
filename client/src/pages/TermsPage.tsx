@@ -1,9 +1,15 @@
 import React from 'react';
 import { ShieldAlert, FileText, Lock, CheckCircle } from 'lucide-react';
+import { SeoHead } from '../components/common/SeoHead.js';
 
 export const TermsPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-slate-50 py-16">
+      <SeoHead
+        title="Terms of Service & Privacy Policy | Borno Higher Study"
+        description="Terms of service, data verification policies, and privacy disclosures for the Borno Higher Study platform."
+        canonicalPath="/terms"
+      />
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
         <div>
           <span className="text-xs font-bold text-teal-600 uppercase tracking-widest">

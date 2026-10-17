@@ -1,0 +1,8 @@
+# Robots.txt for Borno Higher Study
+User-agent: *
+Allow: /
+Disallow: /dashboard
+Disallow: /admin
+Disallow: /auth
+
+Sitemap: https://borno.edu/sitemap.xml

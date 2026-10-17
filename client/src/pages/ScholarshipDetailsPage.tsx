@@ -13,6 +13,8 @@ import {
   ArrowLeft,
   BookOpen,
 } from 'lucide-react';
+import { SeoHead } from '../components/common/SeoHead.js';
+import { Breadcrumbs } from '../components/common/Breadcrumbs.js';
 
 export const ScholarshipDetailsPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -35,14 +37,30 @@ export const ScholarshipDetailsPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-slate-50 py-10">
+      <SeoHead
+        title={`${scholarship.name} — Eligibility, Coverage & Application`}
+        description={`Comprehensive details for ${scholarship.name} offered by ${scholarship.provider}. Covers ${scholarship.isFullyFunded ? '100% tuition and living expenses' : `${scholarship.coveragePercent}% tuition`}. Application deadlines and official portal.`}
+        canonicalPath={`/scholarships/${scholarship.id}`}
+        structuredData={{
+          '@context': 'https://schema.org',
+          '@type': 'FinancialAid',
+          name: scholarship.name,
+          description: scholarship.description,
+          provider: {
+            '@type': 'Organization',
+            name: scholarship.provider,
+          },
+        }}
+      />
+
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
-        <Link
-          to="/scholarships"
-          className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-brand-navy"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          <span>Back to All Scholarships</span>
-        </Link>
+        <Breadcrumbs
+          items={[
+            { label: 'Scholarships', href: '/scholarships' },
+            { label: scholarship.name },
+          ]}
+        />
+
 
         {/* Hero Card */}
         <div className="bg-white rounded-3xl border border-slate-200/90 shadow-card p-8 sm:p-10 space-y-6">

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { checkEnglishEligibility } from '../services/api.js';
 import { COUNTRIES_DATA } from '../data/countriesData.js';
 import { CheckCircle2, AlertCircle, HelpCircle, ExternalLink, ShieldCheck, ArrowRight } from 'lucide-react';
+import { SeoHead } from '../components/common/SeoHead.js';
 
 export const EnglishCheckerPage: React.FC = () => {
   const [testType, setTestType] = useState<'IELTS' | 'TOEFL' | 'PTE'>('IELTS');
@@ -41,6 +42,11 @@ export const EnglishCheckerPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-slate-50 py-10">
+      <SeoHead
+        title="IELTS, TOEFL & PTE Eligibility Checker | Borno Higher Study"
+        description="Verify your IELTS, TOEFL iBT, or PTE Academic score against 380+ verified university degree programs. Check overall band score and minimum subscore criteria."
+        canonicalPath="/english-checker"
+      />
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
         {/* Header */}
         <div className="text-center max-w-3xl mx-auto space-y-3">

@@ -1,10 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { getUniversities } from '../services/api.js';
 import { COUNTRIES_DATA } from '../data/countriesData.js';
 import { University } from '../types/index.js';
 import { UniversityCard } from '../components/common/UniversityCard.js';
-import { Search, Filter, GraduationCap, X, Globe, Building2, Sparkles } from 'lucide-react';
+import { SeoHead } from '../components/common/SeoHead.js';
+import { Pagination } from '../components/common/Pagination.js';
+import { EmptyState } from '../components/common/EmptyState.js';
+import { CardSkeleton } from '../components/common/LoadingSkeleton.js';
+import { Search, Filter, GraduationCap, X, Globe, Building2, Sparkles, ArrowUpDown } from 'lucide-react';
 
 const CONTINENTS = [
   'All Continents',
@@ -20,11 +24,14 @@ export const UniversitiesPage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
 
   const [search, setSearch] = useState(searchParams.get('search') || '');
-  const [selectedContinent, setSelectedContinent] = useState('All Continents');
+  const [selectedContinent, setSelectedContinent] = useState(searchParams.get('continent') || 'All Continents');
   const [selectedCountry, setSelectedCountry] = useState(searchParams.get('country') || 'all');
-  const [selectedType, setSelectedType] = useState('all');
+  const [selectedType, setSelectedType] = useState(searchParams.get('type') || 'all');
   const [selectedLevel, setSelectedLevel] = useState(searchParams.get('level') || 'all');
   const [maxIelts, setMaxIelts] = useState(searchParams.get('maxIelts') || '');
+  const [sortBy, setSortBy] = useState<'ranking' | 'name' | 'acceptance'>('ranking');
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 12;
 
   const [universities, setUniversities] = useState<University[]>([]);
   const [loading, setLoading] = useState(true);
@@ -60,9 +67,45 @@ export const UniversitiesPage: React.FC = () => {
       }
 
       setUniversities(list);
+      setCurrentPage(1);
       setLoading(false);
     });
   }, [selectedContinent, selectedCountry, selectedType, selectedLevel, search, maxIelts]);
+
+  const updateParam = (key: string, val: string) => {
+    const next = new URLSearchParams(searchParams);
+    if (val && val !== 'all' && val !== 'All Continents') {
+      next.set(key, val);
+    } else {
+      next.delete(key);
+    }
+    setSearchParams(next);
+  };
+
+  const handleContinentChange = (val: string) => {
+    setSelectedContinent(val);
+    updateParam('continent', val);
+  };
+
+  const handleCountryChange = (val: string) => {
+    setSelectedCountry(val);
+    updateParam('country', val);
+  };
+
+  const handleTypeChange = (val: string) => {
+    setSelectedType(val);
+    updateParam('type', val);
+  };
+
+  const handleLevelChange = (val: string) => {
+    setSelectedLevel(val);
+    updateParam('level', val);
+  };
+
+  const handleIeltsChange = (val: string) => {
+    setMaxIelts(val);
+    updateParam('maxIelts', val);
+  };
 
   const clearFilters = () => {
     setSearch('');
@@ -72,28 +115,70 @@ export const UniversitiesPage: React.FC = () => {
     setSelectedLevel('all');
     setMaxIelts('');
     setSearchParams({});
+    setCurrentPage(1);
   };
+
+  // Sort
+  const sortedUniversities = useMemo(() => {
+    return [...universities].sort((a, b) => {
+      if (sortBy === 'ranking') {
+        const rankA = a.qsRanking || 9999;
+        const rankB = b.qsRanking || 9999;
+        return rankA - rankB;
+      }
+      if (sortBy === 'acceptance') {
+        const accA = a.acceptanceRate || 100;
+        const accB = b.acceptanceRate || 100;
+        return accB - accA;
+      }
+      return a.name.localeCompare(b.name);
+    });
+  }, [universities, sortBy]);
+
+  // Paginate
+  const paginatedUniversities = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return sortedUniversities.slice(start, start + pageSize);
+  }, [sortedUniversities, currentPage, pageSize]);
+
+  const totalPages = Math.ceil(sortedUniversities.length / pageSize);
+
+  // Active filter chips
+  const activeChips = [
+    search ? { key: 'search', label: `"${search}"`, onClear: () => setSearch('') } : null,
+    selectedContinent !== 'All Continents' ? { key: 'continent', label: `Continent: ${selectedContinent}`, onClear: () => handleContinentChange('All Continents') } : null,
+    selectedCountry !== 'all' ? { key: 'country', label: `Country: ${COUNTRIES_DATA.find((c) => c.slug === selectedCountry)?.name || selectedCountry}`, onClear: () => handleCountryChange('all') } : null,
+    selectedType !== 'all' ? { key: 'type', label: `Type: ${selectedType}`, onClear: () => handleTypeChange('all') } : null,
+    selectedLevel !== 'all' ? { key: 'level', label: `Level: ${selectedLevel}`, onClear: () => handleLevelChange('all') } : null,
+    maxIelts ? { key: 'ielts', label: `IELTS ≤ ${maxIelts}`, onClear: () => handleIeltsChange('') } : null,
+  ].filter(Boolean) as { key: string; label: string; onClear: () => void }[];
 
   return (
     <div className="min-h-screen bg-slate-50 py-10">
+      <SeoHead
+        title="Explore 130+ Global Universities | Borno Higher Study"
+        description="Search accredited universities across Europe, North America, Asia, Oceania, South America, and Africa. Filter by degree level, published tuition fees, and IELTS criteria."
+        canonicalPath="/universities"
+      />
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
         {/* Header */}
         <div className="text-center max-w-3xl mx-auto space-y-3">
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-teal-50 text-teal-800 text-xs font-bold border border-teal-200">
-            <Sparkles className="w-4 h-4 text-amber-500" />
+            <Sparkles className="w-3.5 h-3.5 text-amber-500" />
             <span>100+ Verified Universities Milestone</span>
           </div>
           <h1 className="text-3xl sm:text-5xl font-extrabold text-brand-navy">
             Explore Global Universities
           </h1>
           <p className="text-slate-600 text-sm sm:text-base leading-relaxed">
-            Search verified higher education institutions across 6 continents. Verified against the International Association of Universities WHED directory and national accreditation bodies.
+            Search verified institutions cross-referenced with the UNESCO-IAU World Higher Education Database. Discover official admissions, tuition, and degrees.
           </p>
         </div>
 
         {/* Filter Controls Bar */}
         <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-card space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-6 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-6 gap-3">
             {/* Search Input */}
             <div className="md:col-span-2 relative">
               <Search className="w-4 h-4 text-slate-400 absolute left-3 top-3.5" />
@@ -110,7 +195,7 @@ export const UniversitiesPage: React.FC = () => {
             <div>
               <select
                 value={selectedContinent}
-                onChange={(e) => setSelectedContinent(e.target.value)}
+                onChange={(e) => handleContinentChange(e.target.value)}
                 className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-medium focus:ring-1 focus:ring-teal-500"
               >
                 {CONTINENTS.map((c) => (
@@ -125,10 +210,10 @@ export const UniversitiesPage: React.FC = () => {
             <div>
               <select
                 value={selectedCountry}
-                onChange={(e) => setSelectedCountry(e.target.value)}
+                onChange={(e) => handleCountryChange(e.target.value)}
                 className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-medium focus:ring-1 focus:ring-teal-500"
               >
-                <option value="all">🌍 All Countries</option>
+                <option value="all">🌍 All Destinations</option>
                 {COUNTRIES_DATA.map((c) => (
                   <option key={c.slug} value={c.slug}>
                     {c.flagEmoji} {c.name}
@@ -141,12 +226,12 @@ export const UniversitiesPage: React.FC = () => {
             <div>
               <select
                 value={selectedLevel}
-                onChange={(e) => setSelectedLevel(e.target.value)}
+                onChange={(e) => handleLevelChange(e.target.value)}
                 className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-medium focus:ring-1 focus:ring-teal-500"
               >
                 <option value="all">🎓 Any Degree Level</option>
                 <option value="BACHELOR">Bachelor's Degree</option>
-                <option value="MASTER">Master's Degree (MSc)</option>
+                <option value="MASTER">Master's Degree</option>
                 <option value="PHD">Doctorate (PhD)</option>
               </select>
             </div>
@@ -155,7 +240,7 @@ export const UniversitiesPage: React.FC = () => {
             <div>
               <select
                 value={maxIelts}
-                onChange={(e) => setMaxIelts(e.target.value)}
+                onChange={(e) => handleIeltsChange(e.target.value)}
                 className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-medium focus:ring-1 focus:ring-teal-500"
               >
                 <option value="">📝 Max IELTS Score</option>
@@ -167,62 +252,98 @@ export const UniversitiesPage: React.FC = () => {
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center justify-between text-xs text-slate-500 pt-3 border-t border-slate-100 gap-2">
-            <div className="flex items-center gap-3">
-              <span>
-                Found <strong>{universities.length}</strong> verified university records
+          {/* Active Chips & Sort */}
+          <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-slate-100 text-xs">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-slate-500 font-medium">
+                Found <strong>{sortedUniversities.length}</strong> verified university records
               </span>
-              <span className="text-slate-300">|</span>
-              <label className="flex items-center gap-1.5 cursor-pointer text-slate-700 font-medium">
-                <Building2 className="w-3.5 h-3.5 text-teal-600" />
-                Type:
+
+              {activeChips.map((chip) => (
+                <span
+                  key={chip.key}
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-100 text-slate-700 font-semibold border border-slate-200"
+                >
+                  <span>{chip.label}</span>
+                  <button
+                    onClick={chip.onClear}
+                    className="hover:text-rose-600 transition-colors"
+                    aria-label={`Remove filter ${chip.label}`}
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </span>
+              ))}
+
+              {activeChips.length > 0 && (
+                <button
+                  onClick={clearFilters}
+                  className="text-teal-700 hover:text-teal-800 font-semibold underline ml-1"
+                >
+                  Clear All
+                </button>
+              )}
+            </div>
+
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-1.5">
+                <Building2 className="w-3.5 h-3.5 text-slate-400" />
                 <select
                   value={selectedType}
-                  onChange={(e) => setSelectedType(e.target.value)}
-                  className="bg-slate-100 border-none rounded px-2 py-0.5 text-xs text-slate-800 font-semibold"
+                  onChange={(e) => handleTypeChange(e.target.value)}
+                  className="bg-slate-50 border border-slate-200 rounded-lg px-2 py-1 text-xs font-semibold text-slate-800"
                 >
-                  <option value="all">All Institutions</option>
+                  <option value="all">All Types</option>
                   <option value="PUBLIC">Public Universities</option>
                   <option value="PRIVATE">Private Universities</option>
                 </select>
-              </label>
-            </div>
+              </div>
 
-            <button
-              onClick={clearFilters}
-              className="text-teal-700 font-semibold hover:underline flex items-center gap-1"
-            >
-              <X className="w-3.5 h-3.5" />
-              Reset All Filters
-            </button>
+              <div className="flex items-center gap-1.5">
+                <ArrowUpDown className="w-3.5 h-3.5 text-slate-400" />
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value as any)}
+                  className="bg-slate-50 border border-slate-200 rounded-lg px-2 py-1 text-xs font-semibold text-slate-800"
+                >
+                  <option value="ranking">QS World Ranking</option>
+                  <option value="name">Name (A-Z)</option>
+                  <option value="acceptance">Acceptance Rate</option>
+                </select>
+              </div>
+            </div>
           </div>
         </div>
 
         {/* Results */}
         {loading ? (
-          <div className="py-20 flex justify-center">
-            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-teal-600"></div>
-          </div>
-        ) : universities.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {universities.map((uni) => (
-              <UniversityCard key={uni.id} university={uni} />
+            {Array.from({ length: 6 }).map((_, i) => (
+              <CardSkeleton key={i} />
             ))}
           </div>
+        ) : paginatedUniversities.length > 0 ? (
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {paginatedUniversities.map((uni) => (
+                <UniversityCard key={uni.id} university={uni} />
+              ))}
+            </div>
+
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={setCurrentPage}
+              totalItems={sortedUniversities.length}
+              pageSize={pageSize}
+            />
+          </>
         ) : (
-          <div className="text-center py-20 bg-white rounded-3xl border border-slate-200 p-8">
-            <GraduationCap className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-            <h3 className="text-lg font-bold text-slate-800">No Universities Match Your Filters</h3>
-            <p className="text-xs text-slate-500 max-w-sm mx-auto mt-1">
-              Try resetting your filters or broadening your continent, destination, and degree criteria.
-            </p>
-            <button
-              onClick={clearFilters}
-              className="mt-4 px-4 py-2 bg-brand-navy text-white text-xs font-bold rounded-xl"
-            >
-              Reset Filters
-            </button>
-          </div>
+          <EmptyState
+            title="No Universities Match Your Filters"
+            description="Try broadening your continent selection, resetting IELTS limits, or clearing search query to see all institutions."
+            onReset={clearFilters}
+          />
         )}
       </div>
     </div>

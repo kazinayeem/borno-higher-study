@@ -1,10 +1,16 @@
 import React from 'react';
 import { Logo } from '../components/common/Logo.js';
 import { ShieldCheck, Target, Heart, Award, CheckCircle2, Sparkles } from 'lucide-react';
+import { SeoHead } from '../components/common/SeoHead.js';
 
 export const AboutPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-slate-50 py-16">
+      <SeoHead
+        title="About Borno Higher Study — Global Education Intelligence"
+        description="Learn about Borno Higher Study's mission to provide transparent, verified higher education data, tuition costs in BDT, and grounded AI study advising."
+        canonicalPath="/about"
+      />
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
         {/* Hero */}
         <div className="text-center space-y-4">

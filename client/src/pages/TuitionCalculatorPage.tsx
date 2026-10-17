@@ -12,6 +12,7 @@ import {
   ShieldCheck,
   CheckCircle,
 } from 'lucide-react';
+import { SeoHead } from '../components/common/SeoHead.js';
 
 export const TuitionCalculatorPage: React.FC = () => {
   const [selectedCountrySlug, setSelectedCountrySlug] = useState('finland');
@@ -58,6 +59,11 @@ export const TuitionCalculatorPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-slate-50 py-10">
+      <SeoHead
+        title="Tuition & Living Cost Calculator in BDT | Borno Higher Study"
+        description="Calculate degree tuition fees, estimated living costs, and scholarship deductions with real-time conversion to Bangladeshi Taka (BDT) for 30 study abroad countries."
+        canonicalPath="/calculator"
+      />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
         {/* Header */}
         <div className="text-center max-w-3xl mx-auto space-y-3">

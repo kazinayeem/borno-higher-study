@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { COUNTRIES_DATA } from '../data/countriesData.js';
 import { CountryCard } from '../components/common/CountryCard.js';
-import { Search, Globe, Filter, Sparkles, Compass } from 'lucide-react';
+import { SeoHead } from '../components/common/SeoHead.js';
+import { EmptyState } from '../components/common/EmptyState.js';
+import { Search, Globe, Filter, Sparkles, Compass, ArrowUpDown, X } from 'lucide-react';
 
 const CONTINENTS = [
   { id: 'all', label: 'All Continents' },
@@ -18,32 +20,54 @@ export const CountriesPage: React.FC = () => {
   const [search, setSearch] = useState('');
   const [selectedContinent, setSelectedContinent] = useState('all');
   const [featuredOnly, setFeaturedOnly] = useState(false);
+  const [sortBy, setSortBy] = useState<'name' | 'living-cost-asc' | 'living-cost-desc'>('name');
 
-  const filtered = COUNTRIES_DATA.filter((c) => {
-    // Search
-    const matchesSearch =
-      c.name.toLowerCase().includes(search.toLowerCase()) ||
-      c.capitalCity.toLowerCase().includes(search.toLowerCase()) ||
-      c.majorCities.some((city) => city.toLowerCase().includes(search.toLowerCase())) ||
-      c.region.toLowerCase().includes(search.toLowerCase());
+  const filtered = useMemo(() => {
+    let list = COUNTRIES_DATA.filter((c) => {
+      // Search
+      const matchesSearch =
+        c.name.toLowerCase().includes(search.toLowerCase()) ||
+        c.capitalCity.toLowerCase().includes(search.toLowerCase()) ||
+        c.majorCities.some((city) => city.toLowerCase().includes(search.toLowerCase())) ||
+        c.region.toLowerCase().includes(search.toLowerCase());
 
-    if (!matchesSearch) return false;
+      if (!matchesSearch) return false;
 
-    // Continent
-    if (selectedContinent !== 'all' && c.continent !== selectedContinent) {
-      return false;
-    }
+      // Continent
+      if (selectedContinent !== 'all' && c.continent !== selectedContinent) {
+        return false;
+      }
 
-    // Featured toggle (criteria: popular study destination with verified English-medium degrees & visa frameworks)
-    if (featuredOnly && !c.isFeatured) {
-      return false;
-    }
+      // Featured toggle
+      if (featuredOnly && !c.isFeatured) {
+        return false;
+      }
 
-    return true;
-  });
+      return true;
+    });
+
+    return list.sort((a, b) => {
+      if (sortBy === 'living-cost-asc') return a.avgLivingCostMonthly - b.avgLivingCostMonthly;
+      if (sortBy === 'living-cost-desc') return b.avgLivingCostMonthly - a.avgLivingCostMonthly;
+      return a.name.localeCompare(b.name);
+    });
+  }, [search, selectedContinent, featuredOnly, sortBy]);
+
+  const resetAll = () => {
+    setSearch('');
+    setSelectedContinent('all');
+    setFeaturedOnly(false);
+    setSortBy('name');
+  };
 
   return (
     <div className="min-h-screen bg-slate-50 py-12">
+      <SeoHead
+        title="Explore 30 International Study Destinations | Borno Higher Study"
+        description="Comprehensive directory of international higher education systems across Europe, North America, Asia, Oceania, South America, and Africa. Verified living costs, tuition rates, and visa regulations."
+        canonicalPath="/countries"
+      />
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
         {/* Header */}
         <div className="text-center max-w-3xl mx-auto space-y-4">
@@ -90,7 +114,7 @@ export const CountriesPage: React.FC = () => {
             ))}
           </div>
 
-          {/* Transparent Criteria Bar */}
+          {/* Transparent Criteria Bar & Sort */}
           <div className="flex flex-wrap items-center justify-between gap-4 pt-3 border-t border-slate-100 text-xs">
             <label className="flex items-center gap-2 cursor-pointer font-semibold text-slate-700">
               <input
@@ -105,35 +129,40 @@ export const CountriesPage: React.FC = () => {
               </span>
             </label>
 
-            <span className="text-slate-500 font-medium">
-              Showing <strong>{filtered.length}</strong> destinations
-            </span>
+            <div className="flex items-center gap-4">
+              <span className="text-slate-500 font-medium">
+                Showing <strong>{filtered.length}</strong> destinations
+              </span>
+
+              <div className="flex items-center gap-1.5">
+                <ArrowUpDown className="w-3.5 h-3.5 text-slate-400" />
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value as any)}
+                  className="bg-slate-50 border border-slate-200 rounded-lg px-2 py-1 text-xs font-semibold text-slate-800"
+                >
+                  <option value="name">Name (A-Z)</option>
+                  <option value="living-cost-asc">Living Cost: Low to High</option>
+                  <option value="living-cost-desc">Living Cost: High to Low</option>
+                </select>
+              </div>
+            </div>
           </div>
         </div>
 
         {/* Results grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filtered.map((country) => (
-            <CountryCard key={country.slug} country={country as any} />
-          ))}
-        </div>
-
-        {filtered.length === 0 && (
-          <div className="text-center py-16 bg-white rounded-2xl border border-slate-200">
-            <Globe className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-            <p className="text-slate-700 font-bold text-base">No destinations match your filters</p>
-            <p className="text-slate-500 text-xs mt-1">Try clearing your search query or selecting "All Continents".</p>
-            <button
-              onClick={() => {
-                setSearch('');
-                setSelectedContinent('all');
-                setFeaturedOnly(false);
-              }}
-              className="mt-4 px-4 py-2 bg-teal-600 text-white rounded-xl text-xs font-bold hover:bg-teal-700 transition-colors"
-            >
-              Reset All Filters
-            </button>
+        {filtered.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filtered.map((country) => (
+              <CountryCard key={country.slug} country={country as any} />
+            ))}
           </div>
+        ) : (
+          <EmptyState
+            title="No Destinations Match Your Filter Criteria"
+            description="Try clearing your search query or selecting 'All Continents' to explore all international destinations."
+            onReset={resetAll}
+          />
         )}
       </div>
     </div>
