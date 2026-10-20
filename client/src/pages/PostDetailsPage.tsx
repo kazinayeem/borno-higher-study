@@ -216,7 +216,7 @@ Ireland offers one of Europe's most attractive post-study work routes for STEM g
         </div>
 
         {/* Excerpt */}
-        <div className="mt-8 text-base text-slate-700 font-medium leading-relaxed border-l-4 border-teal-500 pl-4 py-1 italic bg-teal-50/30 rounded-r-lg">
+        <div className="mt-8 text-base text-slate-800 dark:text-slate-200 font-medium leading-relaxed border border-teal-200/80 dark:border-teal-800/60 p-5 italic bg-teal-50/40 dark:bg-teal-950/20 rounded-xl">
           "{post.excerpt}"
         </div>
 

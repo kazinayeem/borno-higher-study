@@ -293,8 +293,8 @@ export const AdminContentStudio: React.FC = () => {
                 <span className="text-[10px] text-slate-500">Human & AI Drafts</span>
               </div>
               <div className="p-4 rounded-xl border border-slate-200/80 bg-slate-50">
-                <span className="text-[11px] font-semibold text-indigo-700 uppercase">Research Papers</span>
-                <p className="text-2xl font-heading font-semibold text-indigo-800 tabular-nums mt-1">
+                <span className="text-[11px] font-semibold text-teal-800 uppercase">Research Papers</span>
+                <p className="text-2xl font-heading font-semibold text-brand-navy tabular-nums mt-1">
                   {overview.metrics.researchPapersCount}
                 </p>
                 <span className="text-[10px] text-slate-500">Peer-Reviewed DOIs</span>

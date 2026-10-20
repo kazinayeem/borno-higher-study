@@ -58,7 +58,7 @@ export const PersonalizedStudentPlannerModal: React.FC<PersonalizedStudentPlanne
 
         {/* Header */}
         <div className="flex items-center gap-3.5 mb-6">
-          <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-primary-600 to-indigo-600 text-white flex items-center justify-center shadow-md shadow-primary-500/25">
+          <div className="w-11 h-11 rounded-xl bg-[#0B192C] text-teal-400 flex items-center justify-center border border-slate-800 shadow-sm">
             <Compass className="w-6 h-6" />
           </div>
           <div>

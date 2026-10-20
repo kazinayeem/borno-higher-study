@@ -133,7 +133,7 @@ export const AcademicRequirementsPage: React.FC = () => {
           <div className="mt-8 flex items-center gap-2 border-b border-navy-800 pb-px">
             <button
               onClick={() => setActiveTab('CATALOG')}
-              className={`px-4 py-2.5 text-xs sm:text-sm font-bold rounded-t-xl transition-all border-b-2 ${
+              className={`px-4 py-2.5 text-xs sm:text-sm font-bold transition-all border-b-2 ${
                 activeTab === 'CATALOG'
                   ? 'border-teal-400 text-teal-300 bg-navy-800/80'
                   : 'border-transparent text-navy-300 hover:text-white hover:bg-navy-800/40'
@@ -143,7 +143,7 @@ export const AcademicRequirementsPage: React.FC = () => {
             </button>
             <button
               onClick={() => setActiveTab('EQUIVALENCIES')}
-              className={`px-4 py-2.5 text-xs sm:text-sm font-bold rounded-t-xl transition-all border-b-2 ${
+              className={`px-4 py-2.5 text-xs sm:text-sm font-bold transition-all border-b-2 ${
                 activeTab === 'EQUIVALENCIES'
                   ? 'border-teal-400 text-teal-300 bg-navy-800/80'
                   : 'border-transparent text-navy-300 hover:text-white hover:bg-navy-800/40'
@@ -153,7 +153,7 @@ export const AcademicRequirementsPage: React.FC = () => {
             </button>
             <button
               onClick={() => setActiveTab('GRADE_SCALES')}
-              className={`px-4 py-2.5 text-xs sm:text-sm font-bold rounded-t-xl transition-all border-b-2 ${
+              className={`px-4 py-2.5 text-xs sm:text-sm font-bold transition-all border-b-2 ${
                 activeTab === 'GRADE_SCALES'
                   ? 'border-teal-400 text-teal-300 bg-navy-800/80'
                   : 'border-transparent text-navy-300 hover:text-white hover:bg-navy-800/40'

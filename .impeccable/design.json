@@ -1,0 +1,104 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-20T11:23:00.000Z",
+  "title": "Design System: Borno Higher Study",
+  "extensions": {
+    "colorMeta": {
+      "primary": {
+        "role": "primary",
+        "displayName": "Scholastic Deep Navy",
+        "canonical": "#0B192C",
+        "tonalRamp": ["#060E18", "#0B192C", "#1E3E62", "#2E5B88", "#477FB8", "#82AEE0", "#C1DAF5", "#F0F6FC"]
+      },
+      "accent-teal": {
+        "role": "secondary",
+        "displayName": "Academic Teal",
+        "canonical": "#0D9488",
+        "tonalRamp": ["#042F2E", "#115E59", "#0D9488", "#14B8A6", "#2DD4BF", "#5EEAD4", "#99F6E4", "#CCFBF1"]
+      },
+      "champagne": {
+        "role": "tertiary",
+        "displayName": "Editorial Champagne",
+        "canonical": "#C5A059",
+        "tonalRamp": ["#451A03", "#78350F", "#92400E", "#B45309", "#C5A059", "#DFCA8C", "#FDE68A", "#F9F6F0"]
+      },
+      "neutral-bg": {
+        "role": "neutral",
+        "displayName": "Pure Canvas White",
+        "canonical": "#FFFFFF",
+        "tonalRamp": ["#0F172A", "#1E293B", "#334155", "#475569", "#64748B", "#CBD5E1", "#E2E8F0", "#FFFFFF"]
+      }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display", "purpose": "National directory titles and hero statements." },
+      "headline": { "displayName": "Headline", "purpose": "Section headings and admissions intelligence modules." },
+      "title": { "displayName": "Title", "purpose": "University and policy names." },
+      "body": { "displayName": "Body", "purpose": "Requirements text, descriptions, and policy disclaimers." },
+      "label": { "displayName": "Label", "purpose": "Badges, table column headers, and status pills." }
+    },
+    "shadows": [
+      { "name": "planar", "value": "0 1px 3px 0 rgba(11, 25, 44, 0.05)", "purpose": "Resting card and container boundary." },
+      { "name": "lifted", "value": "0 4px 14px -2px rgba(11, 25, 44, 0.07)", "purpose": "Hover and elevated action state." }
+    ],
+    "motion": [
+      { "name": "ease-scholastic", "value": "cubic-bezier(0.16, 1, 0.3, 1)", "purpose": "Natural crisp deceleration for menus and cards." }
+    ],
+    "breakpoints": [
+      { "name": "sm", "value": "640px" },
+      { "name": "md", "value": "768px" },
+      { "name": "lg", "value": "1024px" },
+      { "name": "xl", "value": "1280px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Primary action for verified queries and submissions.",
+      "html": "<button class=\"ds-btn-primary\">Explore Verified Universities</button>",
+      "css": ".ds-btn-primary { background: #0B192C; color: #FFFFFF; padding: 10px 20px; font-family: 'DM Sans', sans-serif; font-weight: 600; font-size: 0.9375rem; border: none; border-radius: 8px; cursor: pointer; transition: background-color 0.15s ease, transform 0.15s ease; } .ds-btn-primary:hover { background: #1E3E62; transform: translateY(-1px); }"
+    },
+    {
+      "name": "Academic Accent Button",
+      "kind": "button",
+      "refersTo": "button-accent",
+      "description": "Call-to-action button for eligibility checkers and filters.",
+      "html": "<button class=\"ds-btn-accent\">Check MOI Eligibility</button>",
+      "css": ".ds-btn-accent { background: #0D9488; color: #FFFFFF; padding: 10px 20px; font-family: 'DM Sans', sans-serif; font-weight: 600; font-size: 0.9375rem; border: none; border-radius: 8px; cursor: pointer; transition: background-color 0.15s ease; } .ds-btn-accent:hover { background: #0F766E; }"
+    },
+    {
+      "name": "Verified Milestone Badge",
+      "kind": "chip",
+      "refersTo": "badge-verified",
+      "description": "Indicates verified data integrity target.",
+      "html": "<span class=\"ds-badge-verified\">✓ 116 Verified HEIs</span>",
+      "css": ".ds-badge-verified { background: #CCFBF1; color: #0F766E; border: 1px solid #99F6E4; padding: 4px 10px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; font-family: 'Inter', sans-serif; letter-spacing: 0.025em; display: inline-flex; align-items: center; gap: 4px; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Global Scholar's Ledger",
+    "overview": "Borno Higher Study is designed as an authoritative, high-trust institution directory and admissions governance portal. Its visual tone is editorial, disciplined, and scholarly—resembling the precision of a national academic gazette combined with modern digital utility.",
+    "keyCharacteristics": [
+      "Scholarly Authority: Deep navy foundations paired with clean white surfaces.",
+      "Data Clarity Over Decoration: Tabular numerals for living costs and deadlines.",
+      "High-Contrast Legibility: Minimum 4.5:1 text contrast.",
+      "Subtle, Purposeful Motion: Crisp 150-200ms micro-interactions."
+    ],
+    "rules": [
+      { "name": "The Verification Contrast Rule", "body": "Every verified checkmark, deadline countdown, and fee figure must render with minimum 4.5:1 contrast against its immediate container.", "section": "colors" },
+      { "name": "The Tabular Currency Rule", "body": "All fees in BDT, USD, EUR, and GBP, intake countdown counters, and university statistics must utilize tabular numerals.", "section": "typography" },
+      { "name": "The No-Frivolous-Glow Rule", "body": "No neon box-shadows, blurred backdrop glows, or colored drop shadows.", "section": "elevation" }
+    ],
+    "dos": [
+      "Format all financial figures with their respective currency symbol and clear BDT conversion rates.",
+      "State verified timestamps and official primary documentation links on admission requirements.",
+      "Provide clear focus outlines for keyboard navigation across all interactive elements."
+    ],
+    "donts": [
+      "Don't use decorative purple-to-blue gradients or glossy glassmorphism.",
+      "Don't nest cards inside cards more than 1 level deep.",
+      "Don't use low-contrast gray text on white or colored backgrounds."
+    ]
+  }
+}

@@ -285,14 +285,14 @@ export const AdminCountryCoverageManager: React.FC = () => {
               <span className="text-[11px] text-amber-700 font-medium">Pending Decision</span>
             </div>
 
-            <div className="bg-purple-50 border border-purple-200 rounded-xl p-3.5">
-              <span className="text-xs font-semibold text-purple-800 uppercase tracking-wider block">
+            <div className="bg-amber-50/70 border border-amber-200/80 rounded-xl p-3.5">
+              <span className="text-xs font-semibold text-amber-900 uppercase tracking-wider block">
                 Duplicates Blocked
               </span>
-              <span className="text-2xl font-black text-purple-950 mt-1 block">
+              <span className="text-2xl font-black text-amber-950 mt-1 block">
                 {dashboardData.overview.duplicateCandidatesDetected} Detected
               </span>
-              <span className="text-[11px] text-purple-700 font-medium">Campuses & Aliases</span>
+              <span className="text-[11px] text-amber-800 font-medium">Campuses & Aliases</span>
             </div>
 
             <div className="bg-slate-50 border border-slate-200 rounded-xl p-3.5">
@@ -309,10 +309,10 @@ export const AdminCountryCoverageManager: React.FC = () => {
       </div>
 
       {/* Sub-Navigation Tabs */}
-      <div className="flex border-b border-slate-200 space-x-2">
+      <div className="flex border-b border-slate-200 space-x-1">
         <button
           onClick={() => setActiveSubTab('countries')}
-          className={`py-3 px-5 text-sm font-semibold rounded-t-lg transition border-b-2 flex items-center gap-2 ${
+          className={`py-3 px-5 text-sm font-semibold transition border-b-2 flex items-center gap-2 ${
             activeSubTab === 'countries'
               ? 'border-teal-600 text-teal-700 bg-teal-50/50'
               : 'border-transparent text-slate-600 hover:text-slate-900 hover:bg-slate-50'
@@ -324,7 +324,7 @@ export const AdminCountryCoverageManager: React.FC = () => {
 
         <button
           onClick={() => setActiveSubTab('registry')}
-          className={`py-3 px-5 text-sm font-semibold rounded-t-lg transition border-b-2 flex items-center gap-2 ${
+          className={`py-3 px-5 text-sm font-semibold transition border-b-2 flex items-center gap-2 ${
             activeSubTab === 'registry'
               ? 'border-teal-600 text-teal-700 bg-teal-50/50'
               : 'border-transparent text-slate-600 hover:text-slate-900 hover:bg-slate-50'
@@ -336,7 +336,7 @@ export const AdminCountryCoverageManager: React.FC = () => {
 
         <button
           onClick={() => setActiveSubTab('candidates')}
-          className={`py-3 px-5 text-sm font-semibold rounded-t-lg transition border-b-2 flex items-center gap-2 ${
+          className={`py-3 px-5 text-sm font-semibold transition border-b-2 flex items-center gap-2 ${
             activeSubTab === 'candidates'
               ? 'border-teal-600 text-teal-700 bg-teal-50/50'
               : 'border-transparent text-slate-600 hover:text-slate-900 hover:bg-slate-50'
@@ -348,7 +348,7 @@ export const AdminCountryCoverageManager: React.FC = () => {
 
         <button
           onClick={() => setActiveSubTab('batches')}
-          className={`py-3 px-5 text-sm font-semibold rounded-t-lg transition border-b-2 flex items-center gap-2 ${
+          className={`py-3 px-5 text-sm font-semibold transition border-b-2 flex items-center gap-2 ${
             activeSubTab === 'batches'
               ? 'border-teal-600 text-teal-700 bg-teal-50/50'
               : 'border-transparent text-slate-600 hover:text-slate-900 hover:bg-slate-50'

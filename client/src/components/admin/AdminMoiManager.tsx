@@ -252,7 +252,7 @@ export const AdminMoiManager: React.FC = () => {
         </div>
         <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
           <div className="text-xs font-medium text-gray-500">Selected Institutions</div>
-          <div className="text-2xl font-extrabold text-purple-700 mt-1">{stats.acceptedSelectedInstitutions || 0}</div>
+          <div className="text-2xl font-extrabold text-teal-800 mt-1">{stats.acceptedSelectedInstitutions || 0}</div>
           <div className="text-[11px] text-gray-400 mt-1">Vetted institution roster</div>
         </div>
         <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm">

@@ -219,13 +219,13 @@ export const CareerToolkitHubPage: React.FC = () => {
 
             <Link
               to="/career-toolkit/cv-examples"
-              className="group p-5 rounded-2xl bg-gradient-to-br from-purple-500/10 to-purple-500/5 hover:from-purple-500/20 hover:to-purple-500/10 border border-purple-500/30 transition-all shadow-sm"
+              className="group p-5 rounded-2xl bg-slate-800/80 hover:bg-slate-800 border border-slate-700/80 transition-all shadow-sm"
             >
               <div className="flex items-center justify-between mb-3">
-                <span className="p-2.5 rounded-xl bg-purple-500/20 text-purple-400 group-hover:scale-105 transition-transform">
+                <span className="p-2.5 rounded-xl bg-amber-500/15 text-amber-300 group-hover:scale-105 transition-transform">
                   <Layers className="w-5 h-5" />
                 </span>
-                <ArrowRight className="w-4 h-4 text-purple-400 group-hover:translate-x-1 transition-transform" />
+                <ArrowRight className="w-4 h-4 text-amber-300 group-hover:translate-x-1 transition-transform" />
               </div>
               <h3 className="font-semibold text-white text-base mb-1">
                 {isBn ? '১২টি অরিজিনাল সিভি উদাহরণ' : '12 Original Sample CVs'}

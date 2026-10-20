@@ -219,7 +219,7 @@ export const MoiDirectoryPage: React.FC = () => {
               <div className="text-xs text-gray-400">Accepted with Conditions</div>
             </div>
             <div className="bg-white/5 border border-white/10 rounded-xl p-3 text-center">
-              <div className="text-xl md:text-2xl font-bold text-purple-400">{stats.acceptedSelectedInstitutions || 0}</div>
+              <div className="text-xl md:text-2xl font-bold text-amber-300">{stats.acceptedSelectedInstitutions || 0}</div>
               <div className="text-xs text-gray-400">Selected Institutions</div>
             </div>
             <div className="bg-white/5 border border-white/10 rounded-xl p-3 text-center">

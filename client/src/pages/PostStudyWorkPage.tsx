@@ -85,10 +85,10 @@ export const PostStudyWorkPage: React.FC = () => {
       </div>
 
       {/* Header */}
-      <section className="bg-gradient-to-b from-purple-950 via-slate-900 to-slate-950 text-white py-12 px-4 sm:px-6 lg:px-8">
+      <section className="bg-[#0B192C] border-b border-slate-800 text-white py-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto text-center">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-purple-500/15 border border-purple-400/30 text-purple-300 text-xs font-semibold mb-4">
-            <Briefcase className="w-4 h-4 text-purple-400" />
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-teal-500/15 border border-teal-400/30 text-teal-300 text-xs font-semibold mb-4">
+            <Briefcase className="w-4 h-4 text-teal-400" />
             Verified Post-Graduation Career Pathways
           </div>
           <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight">

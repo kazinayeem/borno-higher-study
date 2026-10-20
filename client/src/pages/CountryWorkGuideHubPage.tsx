@@ -131,7 +131,7 @@ export const CountryWorkGuideHubPage: React.FC = () => {
           <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
             <button
               onClick={() => setIsPlannerOpen(true)}
-              className="inline-flex items-center gap-2 px-6 py-3.5 rounded-xl bg-gradient-to-r from-primary-500 to-indigo-600 hover:from-primary-600 hover:to-indigo-700 text-white font-semibold text-sm shadow-lg shadow-primary-500/25 transition-all transform hover:-translate-y-0.5"
+              className="inline-flex items-center gap-2 px-6 py-3.5 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-semibold text-sm shadow-sm transition-all transform hover:-translate-y-0.5"
             >
               <Sparkles className="w-4 h-4" />
               {t('countryWorkGuide.studentPlanner')}
